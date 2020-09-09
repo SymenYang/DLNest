@@ -2,11 +2,16 @@ import multiprocessing
 import os
 import sys
 from multiprocessing import Process
-from Task import Task
 import importlib
 import shutil
 import json
 import torch
+
+
+try:
+    from Task import Task
+except ImportError:
+    from .Task import Task
 
 # debug
 from pathlib import Path
@@ -23,7 +28,7 @@ class TrainProcess(Process):
             filePath
         )
         module = importlib.util.module_from_spec(spec)
-        dirName = str(self.task.modelFilePath.parents[0])
+        dirName = str(filePath.parents[0])
         if not dirName in sys.path:
             sys.path.append(dirName)
         spec.loader.exec_module(module)
@@ -86,16 +91,24 @@ class TrainProcess(Process):
         shutil.copy(self.task.modelFilePath,modelTargetPath)
         shutil.copy(self.task.datasetFilePath,datasetTargetPath)
         shutil.copy(self.task.lifeCycleFilePath,lifeCycleTargetPath)
-        for item in self.task.otherFilePath:
+        for item in self.task.otherFilePaths:
             if item.is_file():
                 src = str(item)
                 dstPath = saveDir / (item.stem + item.suffix)
                 dst = str(dstPath)
                 shutil.copy(src,dst)
         
+        # 重定向输出
+        self.outputFile = saveDir / "_output.txt"
+        self.outputFP = self.outputFile.open('w')
+        sys.stdout = self.outputFP
+        sys.stderr = self.outputFP
+
         # save args
         argsPath = saveDir / "args.json"
         argsFP = argsPath.open('w')
+        self.task.args["_description"] = self.task.description
+        self.task.args["_pid"] = os.getpid()
         json.dump(self.task.args,argsFP,sort_keys=True, indent=4, separators=(',', ':'))
         argsFP.close()
     
@@ -178,6 +191,10 @@ class TrainProcess(Process):
                 break
 
     def run(self):
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(self.task.GPUID)
+        if self.DEBUG:
+            print("Running on GPU ",self.task.GPUID,self.task.description)
+
         self.__loadModule()
         self.__initLifeCycle()
 
@@ -217,7 +234,7 @@ if __name__ == '__main__':
         modelFilePath = Path("/root/code/DLNestTest/TestModel.py"),
         datasetFilePath = Path("/root/code/DLNestTest/Dataset.py"),
         lifeCycleFilePath = Path("/root/code/DLNestTest/LifeCycle.py"),
-        otherFilePath = [
+        otherFilePaths = [
             Path("/root/code/DLNestTest/DatasetBase.py"),
             Path("/root/code/DLNestTest/__init__.py")
         ],
@@ -233,6 +250,7 @@ if __name__ == '__main__':
                 "max_ckpt_in_consistent_track" : 2
             }
         },
+        GPUID = 0,
         timestamp = "now",
         description = "none"
     )

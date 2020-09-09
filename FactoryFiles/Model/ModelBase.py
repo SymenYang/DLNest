@@ -1,3 +1,4 @@
+import torch
 class ModelBase():
     def __init__(self,args : dict,datasetInfo : dict = None):
         pass

@@ -8,16 +8,20 @@ class Task:
             modelFilePath : Path,
             datasetFilePath : Path,
             lifeCycleFilePath : Path,
-            otherFilePath : list,
             args : dict,
-            timestamp : str,
-            description : str
+            otherFilePaths : list = [],
+            timestamp : str = "",
+            description : str = "",
+            GPUID : int = 0,
+            memoryConsumption : float = -1
         ):
         self.modelFilePath = modelFilePath
         self.datasetFilePath = datasetFilePath
         self.lifeCycleFilePath = lifeCycleFilePath
-        self.otherFilePath = otherFilePath
+        self.otherFilePaths = otherFilePaths
         self.args = args
         self.timestamp = timestamp
         self.description = description
+        self.GPUID = GPUID
+        self.memoryConsumption = memoryConsumption
 
