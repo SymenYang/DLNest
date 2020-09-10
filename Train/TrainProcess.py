@@ -6,21 +6,20 @@ import importlib
 import shutil
 import json
 import torch
-
+from pathlib import Path
 
 try:
     from Task import Task
 except ImportError:
     from .Task import Task
 
-# debug
-from pathlib import Path
 
 class TrainProcess(Process):
     def __init__(self,task : Task):
         super(TrainProcess, self).__init__()
         self.task = task
         self.DEBUG = True
+        self.startEpoch = 0
 
     def __loadAModule(self,filePath : Path,name : str):
         spec = importlib.util.spec_from_file_location(
@@ -37,7 +36,7 @@ class TrainProcess(Process):
     def __loadModule(self):
         self.modelModule = self.__loadAModule(self.task.modelFilePath,"Model")
         self.datasetModule = self.__loadAModule(self.task.datasetFilePath,"Dataset")
-        self.lifeCycleModule = self.__loadAModule(self.task.lifeCycleFilePath,"Lifecycle")
+        self.lifeCycleModule = self.__loadAModule(self.task.lifeCycleFilePath,"LifeCycle")
 
     def __initLifeCycle(self):
         lifeCycleName = self.task.args['lifeCycle_name']
@@ -60,6 +59,20 @@ class TrainProcess(Process):
         if modelName in dir(self.modelModule):
             modelClass = self.modelModule.__getattribute__(modelName)
             self.model = modelClass(self.task.args,self.datasetInfo)
+            self.logDict = self.model.initLog()
+            
+            # 如果有ckpt_load且不为空，则尝试从文件加载模型
+            if "ckpt_load" in self.task.args:
+                try:
+                    ckpt_file = Path(self.task.args['ckpt_load'])
+                    if ckpt_file.is_file():
+                        stateDict = torch.load(self.task.args['ckpt_load'])
+                        self.model.loadSaveDict(stateDict)
+                        self.startEpoch = stateDict['epoch']
+                except Exception as e:
+                    print(e)
+                    print('load ckpt ' , str(self.task.args['ckpt_load']) , 'fail, stop')
+                    exit(0)
         else:
             raise Exception("Cannot find model class")
     
@@ -87,7 +100,7 @@ class TrainProcess(Process):
         # copy python files into dir
         modelTargetPath = saveDir / "_Model.py"
         datasetTargetPath = saveDir / "_Dataset.py"
-        lifeCycleTargetPath = saveDir / "_Lifecycle.py"
+        lifeCycleTargetPath = saveDir / "_LifeCycle.py"
         shutil.copy(self.task.modelFilePath,modelTargetPath)
         shutil.copy(self.task.datasetFilePath,datasetTargetPath)
         shutil.copy(self.task.lifeCycleFilePath,lifeCycleTargetPath)
@@ -155,7 +168,7 @@ class TrainProcess(Process):
             print("Saved model")
 
     def __train(self):
-        nowEpoch = 0
+        nowEpoch = self.startEpoch
         while True:
             for _iter,data in enumerate(self.trainLoader):
                 # run one step
@@ -181,7 +194,7 @@ class TrainProcess(Process):
             # validation
             if self.lifeCycle.needValidation(nowEpoch,self.logDict,self.task.args):
                 self.lifeCycle.BValidation()
-                self.model.validate(self.valLoader)
+                self.model.validate(self.valLoader,self.logDict)
                 self.lifeCycle.AVisualize()
 
             # break decision
@@ -193,7 +206,7 @@ class TrainProcess(Process):
     def run(self):
         os.environ["CUDA_VISIBLE_DEVICES"] = str(self.task.GPUID)
         if self.DEBUG:
-            print("Running on GPU ",self.task.GPUID,self.task.description)
+            print("Running on GPU:",self.task.GPUID,",",self.task.description)
 
         self.__loadModule()
         self.__initLifeCycle()
@@ -211,7 +224,6 @@ class TrainProcess(Process):
         self.lifeCycle.BModelInit()
         self.__initModel()
         self.lifeCycle.model = self.model
-        self.logDict = self.model.initLog()
         self.lifeCycle.AModelInit()
 
         # initialize save folder

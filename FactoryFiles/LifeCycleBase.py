@@ -3,10 +3,11 @@ from ModelBase import ModelBase
 
 
 class LifeCycleBase():
-    def __init__(self,model : ModelBase = None,dataset : DatasetBase = None, trainProcess = None):
+    def __init__(self,model : ModelBase = None,dataset : DatasetBase = None, trainProcess = None, analyzeProcess = None):
         self.model = model
         self.dataset = dataset
         self.trainProcess = trainProcess
+        self.analyzeProcess = analyzeProcess
     
     def BAll(self):
         pass

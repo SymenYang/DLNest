@@ -1,9 +1,10 @@
-from Train.Scheduler import Scheduler
+from Scheduler import Scheduler
 from Train.Task import Task
+from Analyze.AnalyzeTask import AnalyzeTask
 import json
 from pathlib import Path
 import argparse
-from prompt_toolkit import PromptSession
+from prompt_toolkit import PromptSession,HTML
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 import shutil
 
@@ -14,11 +15,11 @@ class Arguments:
     def parser(self):
         return self._parser
 
-class TrainnerArguments(Arguments):
+class DLNestArguments(Arguments):
     def __init__(self):
-        super(TrainnerArguments, self).__init__(desc="Arguments for DLNest trainner.")
+        super(DLNestArguments, self).__init__(desc="Arguments for DLNest trainner.")
 
-        self._parser.add_argument("-c",type=str,default="./Trainer_config.json",help="Config json for DLNest trainer")
+        self._parser.add_argument("-c",type=str,default="./DLNest_config.json",help="Config json for DLNest trainer")
 
 class TaskArguments(Arguments):
     def __init__(self):
@@ -30,15 +31,25 @@ class TaskArguments(Arguments):
         self._parser.add_argument("-f",type=str, default = "", help="frequently changing configuration json file for this task.(default:None)")
         self._parser.add_argument("-j",type=str, default = "False", help="True for jump in line.(default: False)")
 
+class AnalyzeArguments(Arguments):
+    def __init__(self):
+        super(AnalyzeArguments, self).__init__(desc="Arguments for an Analyzer")
+
+        self._parser.add_argument("-r",type=str, help = "path to the model record directory.")
+        self._parser.add_argument("-s",type=str, help = "path to the analyze scripts.")
+        self._parser.add_argument("-c",type=int, help = "which epoch you want the model to load.(int)")
+        self._parser.add_argument("-m",type=int, default = -1, help="predicted GPU memory consumption for this task in MB.(default: 90\% of the total memory)")
+
+
 class ProjectArguments(Arguments):
     def __init__(self):
         super(ProjectArguments, self).__init__(desc="Arguments for create a DLNest project.")
 
         self._parser.add_argument("-d",type=str, help="Path to the directory you want to create the project.")
 
-class Trainer:
+class DLNest:
     def __init__(self):
-        commandArgs = TrainnerArguments().parser().parse_args()
+        commandArgs = DLNestArguments().parser().parse_args()
 
         # 载入trainer的参数
         trainerArgsPath = Path(commandArgs.c)
@@ -56,6 +67,7 @@ class Trainer:
     
         self.taskArgParser = TaskArguments()
         self.projectArgParser = ProjectArguments()
+        self.analyzeArgParser = AnalyzeArguments()
 
     def __replaceArgs(self,newArgName,newArgValue,args):
         """
@@ -117,26 +129,26 @@ class Trainer:
     def runTrain(self,commandWordList : list):
         # 获取run命令的参数
         args,otherArgs = self.taskArgParser.parser().parse_known_args(commandWordList[1:])
-        taskArgsPath = Path(args.c)
-        # 初始化task 参数，包括但不限于模型参数，数据集参数
-        taskArgs = {}
-        
-        # 若模型参数根json获取失败，报错
-        if self.loadArgs(taskArgsPath,taskArgs):
-            ...
-        else:
-            print("Wrong root configuration json file.")
-            return
-
-        # 获取高频修改参数
-        # 若高频修改参数获取失败，忽略
-        if args.f != "":
-            hotArgsPath = Path(args.f)
-            self.loadArgs(hotArgsPath,taskArgs)
 
         # 尝试运行任务
         try:
-            print(taskArgs)
+            taskArgsPath = Path(args.c)
+            # 初始化task 参数，包括但不限于模型参数，数据集参数
+            taskArgs = {}
+
+            # 若模型参数根json获取失败，报错
+            if self.loadArgs(taskArgsPath,taskArgs):
+                ...
+            else:
+                print("Wrong root configuration json file.")
+                return
+
+            # 获取高频修改参数
+            # 若高频修改参数获取失败，忽略
+            if args.f != "":
+                hotArgsPath = Path(args.f)
+            self.loadArgs(hotArgsPath,taskArgs)
+            
             # 获得需要复制的文件名
             modelFilePath = Path(taskArgs["model_file_path"])
             datasetFilePath = Path(taskArgs["dataset_file_path"])
@@ -162,16 +174,16 @@ class Trainer:
     
     def newProject(self,commandWordList : list):
         args,otherArgs = self.projectArgParser.parser().parse_known_args(commandWordList[1:])
-        projectPath = Path(args.d)
-        
-        # 若目标位置有文件或文件夹，失败退出
-        if projectPath.exists():
-            print("path Already exists.")
-            return
-        
-        # 将FactoryFile复制进目标位置
-        factoryPath = Path("./FactoryFiles")
         try:
+            projectPath = Path(args.d)
+
+            # 若目标位置有文件或文件夹，失败退出
+            if projectPath.exists():
+                print("path Already exists.")
+                return
+
+            # 将FactoryFile复制进目标位置
+            factoryPath = Path("./FactoryFiles")
             shutil.copytree(factoryPath,projectPath)
 
             # 修改root_config中的save_root
@@ -187,15 +199,32 @@ class Trainer:
             print(e)
             return
 
+    def analyze(self,commandWordList : list):
+        args,otherArgs = self.analyzeArgParser.parser().parse_known_args(commandWordList[1:])
+        
+        try:
+            analyzeTask = AnalyzeTask(
+                recordPath = Path(args.r),
+                scriptPath = Path(args.s),
+                checkpointID = args.c,
+                memoryConsumption = args.m
+            )
+            self.scheduler.giveAnAnalyzeTask(analyzeTask)
+        except Exception as e:
+            print(e)
+            print("fail to run the analyzer.")
+
     def run(self):
         self.session = PromptSession(auto_suggest=AutoSuggestFromHistory())
         while True:
-            command = self.session.prompt()
+            command = self.session.prompt(HTML("<seagreen><b>DLNest>></b></seagreen>"))
             commandWordList = command.strip().split(' ')
             if commandWordList[0] == 'run':
                 self.runTrain(commandWordList)
             elif commandWordList[0] == 'new':
                 self.newProject(commandWordList)
+            elif commandWordList[0] == 'analyze':
+                self.analyze(commandWordList)
             elif commandWordList[0] == 'show':
                 if commandWordList[1] == 'pending':
                     print("[",end='')
@@ -208,5 +237,5 @@ class Trainer:
                 print("Use \'run\' to start a new training process, use \'new\' to create a project.")
 
 if __name__ == "__main__":
-    tr = Trainer()
+    tr = DLNest()
     tr.run()

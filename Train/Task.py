@@ -1,6 +1,5 @@
 import json
 from pathlib import Path
-import time
 
 class Task:
     def __init__(

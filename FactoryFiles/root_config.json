@@ -4,10 +4,10 @@
     "dataset_name" : "Dataset",
     "lifeCycle_name" : "LifeCycle",
     "checkpoint_args" : {
-        "max_ckpt_in_slow_track" : 3,
-        "dilation_in_slow_track" : 2,
+        "max_ckpt_in_slow_track" : 100,
+        "dilation_in_slow_track" : 100,
         "max_ckpt_in_fast_track" : 2,
-        "max_ckpt_in_consistent_track" : 2
+        "max_ckpt_in_consistent_track" : 1
     },
     "model_file_path" : "",
     "dataset_file_path" : "",

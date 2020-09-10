@@ -5,14 +5,13 @@ import random
 from pathlib import Path
 from apscheduler.schedulers.background import BackgroundScheduler
 
-try:
-    from TrainProcess import TrainProcess
-except ImportError:
-    from .TrainProcess import TrainProcess
-try:
-    from Task import Task
-except ImportError:
-    from .Task import Task
+from Train.TrainProcess import TrainProcess
+from Train.Task import Task
+from Analyze.AnalyzeTask import AnalyzeTask
+from Analyze.Analyzer import AnalyzerProcess
+
+import sys
+import multiprocessing
 
 class CardInfo:
     def __init__(self,id,realID):
@@ -193,6 +192,59 @@ class Scheduler:
                 return False
             finally:
                 self.applyTaskLock.release()
+
+    def __runAnalyzeTaskOnCard(self,task : AnalyzeTask, cardID : int):
+
+        # 获得卡
+        card = self.cards[cardID]
+
+        task.GPUID = card.realID
+
+        taskProcess = AnalyzerProcess(task)
+
+        
+        tmpstdin = sys.stdin
+        try:
+            #及其危险的行为，为了让子进程能使用stdio，直接硬修改主进程的stdio为None避免在子进程中被close，再在子进程中进行复原
+            # 千万不能删掉join，不然主进程中就没有stdin了，或者会发生stdin的冲突
+            taskProcess.stdin = sys.stdin
+            sys.stdin = None
+
+            taskProcess.start()
+            card.addATask(taskProcess)
+            taskProcess.join()
+        finally:
+            # 及其危险的行为
+            sys.stdin = tmpstdin
+
+    def giveAnAnalyzeTask(self,task : AnalyzeTask):
+        if self.applyTaskLock.acquire():
+            print("Scheduler received an analyze task.")
+            
+            try:
+                runningCard = None
+                for id in range(len(self.cards)):
+                    if self.__canTaskRunOnCard(task,id):
+                        runningCard = self.cards[id]
+                        break
+
+                if runningCard is None:
+                    print("No cards available now.")
+                    return False
+
+            except Exception as e:
+                print(e)
+                return False
+            finally:
+                self.applyTaskLock.release()
+            
+            try:
+                self.__runAnalyzeTaskOnCard(task,runningCard.id)
+                return True
+            except Exception as e:
+                print(e)
+                return False
+            
 
     def __routineRunTask(self):
         """
