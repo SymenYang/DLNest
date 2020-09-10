@@ -39,7 +39,7 @@ class TrainProcess(Process):
         self.lifeCycleModule = self.__loadAModule(self.task.lifeCycleFilePath,"LifeCycle")
 
     def __initLifeCycle(self):
-        lifeCycleName = self.task.args['lifeCycle_name']
+        lifeCycleName = self.task.args['life_cycle_name']
         if lifeCycleName in dir(self.lifeCycleModule):
             self.lifeCycle = self.lifeCycleModule.__getattribute__(lifeCycleName)()
         else:
@@ -254,7 +254,7 @@ if __name__ == '__main__':
             "save_root" : "/root/code/DLNestTest/Saves",
             "model_name" : "ModelTest",
             "dataset_name" : "DatasetTest",
-            "lifeCycle_name" : "LifeCycleTest",
+            "life_cycle_name" : "LifeCycleTest",
             "checkpoint_args" : {
                 "max_ckpt_in_slow_track" : 3,
                 "dilation_in_slow_track" : 2,

@@ -76,7 +76,7 @@ class AnalyzerProcess(Process):
         self.args['ckpt_load'] = str(checkpointFilePath)
 
     def __initLifeCycle(self):
-        lifeCycleName = self.args['lifeCycle_name']
+        lifeCycleName = self.args['life_cycle_name']
         if lifeCycleName in dir(self.lifeCycleModule):
             self.lifeCycle = self.lifeCycleModule.__getattribute__(lifeCycleName)()
         else:

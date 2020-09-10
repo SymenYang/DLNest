@@ -2,7 +2,7 @@
     "save_root" : "",
     "model_name" : "Model",
     "dataset_name" : "Dataset",
-    "lifeCycle_name" : "LifeCycle",
+    "life_cycle_name" : "LifeCycle",
     "checkpoint_args" : {
         "max_ckpt_in_slow_track" : 100,
         "dilation_in_slow_track" : 100,

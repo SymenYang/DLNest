@@ -295,7 +295,7 @@ if __name__ == "__main__":
             "save_root" : "/root/code/DLNestTest/Saves",
             "model_name" : "ModelTest",
             "dataset_name" : "DatasetTest",
-            "lifeCycle_name" : "LifeCycleTest",
+            "life_cycle_name" : "LifeCycleTest",
             "checkpoint_args" : {
                 "max_ckpt_in_slow_track" : 3,
                 "dilation_in_slow_track" : 2,
@@ -319,7 +319,7 @@ if __name__ == "__main__":
             "save_root" : "/root/code/DLNestTest/Saves",
             "model_name" : "ModelTest",
             "dataset_name" : "DatasetTest",
-            "lifeCycle_name" : "LifeCycleTest",
+            "life_cycle_name" : "LifeCycleTest",
             "checkpoint_args" : {
                 "max_ckpt_in_slow_track" : 3,
                 "dilation_in_slow_track" : 2,
@@ -343,7 +343,7 @@ if __name__ == "__main__":
             "save_root" : "/root/code/DLNestTest/Saves",
             "model_name" : "ModelTest",
             "dataset_name" : "DatasetTest",
-            "lifeCycle_name" : "LifeCycleTest",
+            "life_cycle_name" : "LifeCycleTest",
             "checkpoint_args" : {
                 "max_ckpt_in_slow_track" : 3,
                 "dilation_in_slow_track" : 2,
