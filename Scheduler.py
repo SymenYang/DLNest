@@ -244,7 +244,6 @@ class Scheduler:
             except Exception as e:
                 print(e)
                 return False
-            
 
     def __routineRunTask(self):
         """

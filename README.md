@@ -162,3 +162,8 @@ DLNest Analyzer会自动寻找对应名称的py文件，加载其中的experienc
 值得一提的是，实验脚本文件可以在DLNest Analyzer运行的过程中动态修改、新建，可以方便、灵活的进行实验，且不用重新加载模型  
 在DLNest Analyzer中键入exit命令即可退出DLNest Analyzer  
 ** 虽然DLNest Analyzer阻塞了DLNest进程的交互，但DLNest Analyzer与DLNest并不是同一个进程，在DLNest Analyzer中停留不影响DLNest中的实验和计划实验的运行（但可能会通过占用GPU资源影响到）
+## 修改计划
+- [ ] 任务请求化（http）
+- [ ] 复制文件夹 
+- [ ] 支持相对路径
+- [ ] 多卡支持

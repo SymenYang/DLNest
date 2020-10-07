@@ -172,8 +172,6 @@ class AnalyzerProcess(Process):
         self.__initAll()
         self.__inputLoop()
 
-
-
 if __name__ == "__main__":
     ta = AnalyzeTask(
         recordPath = Path("/root/code/Phoenix_DLNest/Saves/2020-09-09_12:40:49_0"),

@@ -40,7 +40,6 @@ class AnalyzeArguments(Arguments):
         self._parser.add_argument("-c",type=int, help = "which epoch you want the model to load.(int)")
         self._parser.add_argument("-m",type=int, default = -1, help="predicted GPU memory consumption for this task in MB.(default: 90\% of the total memory)")
 
-
 class ProjectArguments(Arguments):
     def __init__(self):
         super(ProjectArguments, self).__init__(desc="Arguments for create a DLNest project.")

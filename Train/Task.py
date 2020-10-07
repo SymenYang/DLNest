@@ -23,4 +23,3 @@ class Task:
         self.description = description
         self.GPUID = GPUID
         self.memoryConsumption = memoryConsumption
-
