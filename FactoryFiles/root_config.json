@@ -9,6 +9,7 @@
         "max_ckpt_in_fast_track" : 2,
         "max_ckpt_in_consistent_track" : 1
     },
+    "root_file_path" : "",
     "model_file_path" : "",
     "dataset_file_path" : "",
     "life_cycle_file_path" : "",

@@ -22,12 +22,14 @@ class TrainProcess(Process):
         self.startEpoch = 0
 
     def __loadAModule(self,filePath : Path,name : str):
+        if not filePath.is_absolute():
+            filePath = Path(self.task.args["root_file_path"]) / filePath
         spec = importlib.util.spec_from_file_location(
             name,
             filePath
         )
         module = importlib.util.module_from_spec(spec)
-        dirName = str(filePath.parents[0])
+        dirName = str(filePath.parent)
         if not dirName in sys.path:
             sys.path.append(dirName)
         spec.loader.exec_module(module)
@@ -75,7 +77,28 @@ class TrainProcess(Process):
                     exit(0)
         else:
             raise Exception("Cannot find model class")
-    
+
+    def __copyAFile(self,filePath : Path, saveDir : Path):
+        '''
+        若filePath为相对路径，则复制到其对应文件夹
+        若filePath为绝对路径，则复制到储存包的根
+        '''
+        if filePath.is_absolute():
+            if filePath.is_dir():
+                shutil.copytree(filePath,saveDir / filePath.stem)
+            else:
+                shutil.copy(filePath,saveDir / (filePath.stem + filePath.suffix))
+        else:
+            abFilePath = Path(self.task.args["root_file_path"]) / filePath
+            if abFilePath.is_dir():
+                shutil.copytree(abFilePath,saveDir / filePath)
+            else:
+                target = saveDir / filePath
+                target_dir = target.parent
+                if not target_dir.exists():
+                    target_dir.mkdir(parents = True, exist_ok = True)
+                shutil.copy(abFilePath,target)
+
     def __initSave(self):
         # init saving root
         saveRoot = Path(self.task.args["save_root"])
@@ -98,19 +121,15 @@ class TrainProcess(Process):
         self.maxCkptConsistent = ckptArgs["max_ckpt_in_consistent_track"]
 
         # copy python files into dir
-        modelTargetPath = saveDir / "_Model.py"
-        datasetTargetPath = saveDir / "_Dataset.py"
-        lifeCycleTargetPath = saveDir / "_LifeCycle.py"
-        shutil.copy(self.task.modelFilePath,modelTargetPath)
-        shutil.copy(self.task.datasetFilePath,datasetTargetPath)
-        shutil.copy(self.task.lifeCycleFilePath,lifeCycleTargetPath)
+        self.__copyAFile(self.task.modelFilePath,saveDir)
+        self.__copyAFile(self.task.datasetFilePath,saveDir)
+        self.__copyAFile(self.task.lifeCycleFilePath,saveDir)
         for item in self.task.otherFilePaths:
-            if item.is_file():
-                src = str(item)
-                dstPath = saveDir / (item.stem + item.suffix)
-                dst = str(dstPath)
-                shutil.copy(src,dst)
-        
+            try:
+                self.__copyAFile(item,saveDir)
+            except Exception as e:
+                print("[Ignored]",e)
+
         # 重定向输出
         self.outputFile = saveDir / "_output.txt"
         self.outputFP = self.outputFile.open('w')
@@ -122,6 +141,7 @@ class TrainProcess(Process):
         argsFP = argsPath.open('w')
         self.task.args["_description"] = self.task.description
         self.task.args["_pid"] = os.getpid()
+        self.task.args["root_file_path"] = str(saveDir)
         json.dump(self.task.args,argsFP,sort_keys=True, indent=4, separators=(',', ':'))
         argsFP.close()
     

@@ -124,7 +124,7 @@ class DLNest:
             except Exception:
                 ...
             return False
-        
+
     def runTrain(self,commandWordList : list):
         # 获取run命令的参数
         args,otherArgs = self.taskArgParser.parser().parse_known_args(commandWordList[1:])
@@ -146,7 +146,7 @@ class DLNest:
             # 若高频修改参数获取失败，忽略
             if args.f != "":
                 hotArgsPath = Path(args.f)
-            self.loadArgs(hotArgsPath,taskArgs)
+                self.loadArgs(hotArgsPath,taskArgs)
             
             # 获得需要复制的文件名
             modelFilePath = Path(taskArgs["model_file_path"])
@@ -174,7 +174,7 @@ class DLNest:
     def newProject(self,commandWordList : list):
         args,otherArgs = self.projectArgParser.parser().parse_known_args(commandWordList[1:])
         try:
-            projectPath = Path(args.d)
+            projectPath = Path(args.d).absolute()
 
             # 若目标位置有文件或文件夹，失败退出
             if projectPath.exists():
@@ -185,12 +185,13 @@ class DLNest:
             factoryPath = Path("./FactoryFiles")
             shutil.copytree(factoryPath,projectPath)
 
-            # 修改root_config中的save_root
+            # 修改root_config中的save_root与root_file_path
             rootConfigPath = projectPath / "root_config.json"
             root_config = {}
             with rootConfigPath.open('r') as fp:
                 root_config = json.load(fp)
             root_config["save_root"] = str(projectPath / "Saves")
+            root_config["root_file_path"] = str(projectPath)
             with rootConfigPath.open('w') as fp:
                 json.dump(root_config, fp, indent=4, separators=(',', ':'))
 

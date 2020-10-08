@@ -38,6 +38,12 @@ class AnalyzerProcess(Process):
         # 用以在子进程中操作主进程的stdin
         self.stdin = None
 
+    def __resolveAbOrRePathForAnalyze(self,filePath : Path,rootFilePath : Path):
+        if filePath.is_absolute():
+            return rootFilePath / (filePath.stem + filePath.suffix)
+        else:
+            return rootFilePath / filePath
+
     def __loadAModule(self,filePath : Path,name : str):
         # 按照文件名加载一个模块
         spec = importlib.util.spec_from_file_location(
@@ -59,13 +65,18 @@ class AnalyzerProcess(Process):
         if not recordDirName in sys.path:
             sys.path.append(recordDirName)
         
-        self.modelModule = self.__loadAModule(self.task.recordPath / "_Model.py","Model")
-        self.datasetModule = self.__loadAModule(self.task.recordPath / "_Dataset.py","Dataset")
-        self.lifeCycleModule = self.__loadAModule(self.task.recordPath / "_LifeCycle.py","LifeCycle")
-        
         # 加载args
         with (self.task.recordPath / "args.json").open('r') as fp:
             self.args = json.load(fp)
+    
+        # 加载model dataset lifecycle
+        modelFilePath = self.__resolveAbOrRePathForAnalyze(Path(self.args["model_file_path"]),Path(self.args["root_file_path"]))
+        datasetFilePath = self.__resolveAbOrRePathForAnalyze(Path(self.args["dataset_file_path"]),Path(self.args["root_file_path"]))
+        lifeCyclelFilePath = self.__resolveAbOrRePathForAnalyze(Path(self.args["life_cycle_file_path"]),Path(self.args["root_file_path"]))
+        self.modelModule = self.__loadAModule(modelFilePath,"Model")
+        self.datasetModule = self.__loadAModule(datasetFilePath,"Dataset")
+        self.lifeCycleModule = self.__loadAModule(lifeCyclelFilePath,"LifeCycle")
+        
 
     def __setCheckpoint(self):
         # 找到checkpoint的文件，并加入args
