@@ -72,8 +72,8 @@ class TrainProcess(Process):
                         self.model.loadSaveDict(stateDict)
                         self.startEpoch = stateDict['epoch']
                 except Exception as e:
-                    print(e)
-                    print('load ckpt ' , str(self.task.args['ckpt_load']) , 'fail, stop')
+                    print("[Train Process] [Ignored]",e)
+                    print('[Train Process] [Ignored]load ckpt ' , str(self.task.args['ckpt_load']) , 'fail, stop')
                     exit(0)
         else:
             raise Exception("Cannot find model class")
@@ -103,7 +103,7 @@ class TrainProcess(Process):
         # init saving root
         saveRoot = Path(self.task.args["save_root"])
         saveDir = saveRoot / self.task.timestamp
-        print("Saving to " + str(saveDir))
+        print("[Train Process] Saving to " + str(saveDir))
         saveDir.mkdir(parents=True,exist_ok=True)
 
         # checkpoints saving dir
@@ -185,7 +185,7 @@ class TrainProcess(Process):
                 item.unlink()
 
         if self.DEBUG:
-            print("Saved model")
+            print("[Train Process] Saved model")
 
     def __train(self):
         nowEpoch = self.startEpoch
@@ -224,9 +224,13 @@ class TrainProcess(Process):
                 break
 
     def run(self):
-        os.environ["CUDA_VISIBLE_DEVICES"] = str(self.task.GPUID)
+        if isinstance(self.task.GPUID,list):
+            ids = [str(item) for item in self.task.GPUID]
+            os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(ids)
+        else:
+            os.environ["CUDA_VISIBLE_DEVICES"] = str(self.task.GPUID)
         if self.DEBUG:
-            print("Running on GPU:",self.task.GPUID,",",self.task.description)
+            print("[Train Process] Running on GPU:",self.task.GPUID,",",self.task.description)
 
         self.__loadModule()
         self.__initLifeCycle()

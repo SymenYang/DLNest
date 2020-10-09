@@ -123,6 +123,42 @@ class Scheduler:
         # 都满足
         return True
 
+    def __canTaskRunOnCards(self,task : Task):
+        '''
+        return [] if cannot run
+        return [cards] if can run
+        '''
+        memoryConsumption = self.cards[0].totalMemory * 0.9 if task.memoryConsumption < 0 else task.memoryConsumption
+        ret = []
+        memInfo = []
+        for item in self.cards:
+            if item.isBreak:
+                continue
+        
+            item.checkTasks()
+            if item.nowTask >= self.maxTaskPerCard:
+                continue
+        
+            delta = time.time() - item.lastUseTime
+            if delta < self.timeDelay:
+                continue
+        
+            freeMem = item.getFreeMemory()
+            memInfo.append((freeMem,item))
+        
+        memInfo.sort(key=lambda x:x[0],reverse=True)
+        memCount = 0.0
+        for item in memInfo:
+            memCount += item[0]
+            ret.append(item[1])
+            if memCount > memoryConsumption:
+                break
+
+        if memCount <= memoryConsumption:
+            return []
+        else:
+            return ret
+
     def __runTaskOnCard(self,task : Task, cardID : int):
         
         # 获得卡
@@ -143,6 +179,27 @@ class Scheduler:
         # 向卡中添加该任务的记录
         card.addATask(taskProcess)
 
+    def __runTaskOnCards(self,task : Task, cards : list):
+        
+        # 获得卡
+        cardIDs = [item.realID for item in cards]
+
+        # 赋予时间戳
+        nowTime = time.time()
+        if int(nowTime) != self.lastTime: # time 是实数，需要判断整秒数相同来避免太接近的几次训练使用同一个文件夹
+            self.nowID = 0
+        task.timestamp = time.strftime('%Y-%m-%d_%H:%M:%S',time.localtime(nowTime)) + "_" + str(self.nowID)
+        self.nowID += 1
+        self.lastTime = int(nowTime)
+        # 赋予显卡
+        task.GPUID = cardIDs
+        # 启动训练进程
+        taskProcess = TrainProcess(task)
+        taskProcess.start()
+        # 向卡中添加该任务的记录
+        for card in cards:
+            card.addATask(taskProcess)
+
     def giveATask(self,task : Task, jumpInLine : bool = False):
         """
         input:
@@ -154,41 +211,61 @@ class Scheduler:
 
         """
         if self.applyTaskLock.acquire():
-            print("Scheduler received a task.")
+            print("[Scheduler] Scheduler received a task.")
             try:
                 # 不插队，检查是否有等待
                 if not jumpInLine:
                     if len(self.pendingTasks) > 0:
-                        print("No card valid now, task have been appended into pending list.")
+                        print("[Scheduler] No card valid now, task have been appended into pending list.")
                         self.pendingTasks.append(task)
                         return False
 
                 # 在这时，只有插队或不存在等待任务，故均直接指派
-                # 检查第一个可用卡
-                runningCard = None
-                for id in range(len(self.cards)):
-                    if self.__canTaskRunOnCard(task,id):
-                        runningCard = self.cards[id]
-                        break
+                if task.multiCard:
+                    # 获得分配卡集合
+                    runningCards = self.__canTaskRunOnCards(task)
+                    
+                    #没有可用卡，加入队列
+                    if len(runningCards) == 0:
+                        if jumpInLine:
+                            print("[Scheduler] No card valid now, task have been put in the front of pending list.")
+                            self.pendingTasks.insert(0,task)
+                        else:
+                            print("[Scheduler] No card valid now, task have been appended into pending list.")
+                            self.pendingTasks.append(task)
+                        return False
 
-                # 若没有可用卡，则加入等待队列，若插队，则进入等待队列首
-                if runningCard is None:
-                    if jumpInLine:
-                        print("No card valid now, task have been put in the front of pending list.")
-                        self.pendingTasks.insert(0,task)
-                    else:
-                        print("No card valid now, task have been appended into pending list.")
-                        self.pendingTasks.append(task)
-                    return False
+                    self.__runTaskOnCards(task,runningCards)
 
-                #有可用卡，则在可用卡运行任务
-                self.__runTaskOnCard(task,runningCard.id)
+                    #有可用卡，则在可用卡运行任务
+                    return True
+                else:
+                    # 单卡情况
+                    # 检查第一个可用卡
+                    runningCard = None
+                    for id in range(len(self.cards)):
+                        if self.__canTaskRunOnCard(task,id):
+                            runningCard = self.cards[id]
+                            break
 
-                #已经开始执行 return True
-                return True
+                    # 若没有可用卡，则加入等待队列，若插队，则进入等待队列首
+                    if runningCard is None:
+                        if jumpInLine:
+                            print("[Scheduler] No card valid now, task have been put in the front of pending list.")
+                            self.pendingTasks.insert(0,task)
+                        else:
+                            print("[Scheduler] No card valid now, task have been appended into pending list.")
+                            self.pendingTasks.append(task)
+                        return False
+
+                    #有可用卡，则在可用卡运行任务
+                    self.__runTaskOnCard(task,runningCard.id)
+
+                    #已经开始执行 return True
+                    return True
 
             except Exception as e:
-                print(e)
+                print("[Scheduler] [Ignored]",e)
                 return False
             finally:
                 self.applyTaskLock.release()
@@ -219,7 +296,7 @@ class Scheduler:
 
     def giveAnAnalyzeTask(self,task : AnalyzeTask):
         if self.applyTaskLock.acquire():
-            print("Scheduler received an analyze task.")
+            print("[Scheduler] Scheduler received an analyze task.")
             
             try:
                 runningCard = None
@@ -229,11 +306,11 @@ class Scheduler:
                         break
 
                 if runningCard is None:
-                    print("No cards available now.")
+                    print("[Scheduler] No cards available now.")
                     return False
 
             except Exception as e:
-                print(e)
+                print("[Scheduler] [Ignored]",e)
                 return False
             finally:
                 self.applyTaskLock.release()
@@ -242,7 +319,7 @@ class Scheduler:
                 self.__runAnalyzeTaskOnCard(task,runningCard.id)
                 return True
             except Exception as e:
-                print(e)
+                print("[Scheduler] [Ignored]",e)
                 return False
 
     def __routineRunTask(self):
@@ -255,23 +332,36 @@ class Scheduler:
                 # 遍历
                 while len(self.pendingTasks) > 0:
                     task = self.pendingTasks[0]
-                    runningCardID = -1
-                    for id in range(len(self.cards)):
-                        if self.__canTaskRunOnCard(task,id):
-                            runningCardID = id
-                            break
+                    if task.multiCard:
+                        # 获得分配卡集合
+                        runningCards = self.__canTaskRunOnCards(task)
 
-                    # 如果当前任务不能跑，则不往后查找任务运行    
-                    if runningCardID == -1:
-                        break
+                        # 如果当前任务不能跑，则不往后查找任务运行
+                        if len(runningCards) == 0:
+                            break
+                        
+                        # 运行当前任务
+                        self.__runTaskOnCards(task,runningCards)
+                        # 将当前task弹出
+                        self.pendingTasks.pop(0)
+                    else:
+                        runningCardID = -1
+                        for id in range(len(self.cards)):
+                            if self.__canTaskRunOnCard(task,id):
+                                runningCardID = id
+                                break
+
+                        # 如果当前任务不能跑，则不往后查找任务运行    
+                        if runningCardID == -1:
+                            break
                 
-                    # 运行当前任务
-                    self.__runTaskOnCard(task,runningCardID)
-                    # 将当前task 弹出
-                    self.pendingTasks.pop(0)
+                        # 运行当前任务
+                        self.__runTaskOnCard(task,runningCardID)
+                        # 将当前task弹出
+                        self.pendingTasks.pop(0)
 
             except Exception as e:
-                print(e)
+                print("[Scheduler] [Ignored]",e)
             finally:
                 self.applyTaskLock.release()
 

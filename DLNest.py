@@ -30,6 +30,7 @@ class TaskArguments(Arguments):
         self._parser.add_argument("-m",type=int, default = -1, help="predicted GPU memory consumption for this task in MB.(default: 90\% of the total memory)")
         self._parser.add_argument("-f",type=str, default = "", help="frequently changing configuration json file for this task.(default:None)")
         self._parser.add_argument("-j",type=str, default = "False", help="True for jump in line.(default: False)")
+        self._parser.add_argument("-mc",type=str,default = "False", help="True to use multi card if single card can't handle")
 
 class AnalyzeArguments(Arguments):
     def __init__(self):
@@ -155,6 +156,8 @@ class DLNest:
             otherFilePaths = [Path(item) for item in taskArgs["other_file_paths"]]
             # 获取是否需要插队
             jumpInLine = True if args.j == "True" else False
+            # 获取是否多卡
+            multiCard = True if args.mc == "True" else False
             # 新建Task
             task = Task(
                 modelFilePath = modelFilePath,
@@ -163,7 +166,8 @@ class DLNest:
                 otherFilePaths = otherFilePaths,
                 args = taskArgs,
                 description = args.d,
-                memoryConsumption = args.m
+                memoryConsumption = args.m,
+                multiCard=multiCard
             )
             # 运行Task
             self.scheduler.giveATask(task,jumpInLine)

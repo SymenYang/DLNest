@@ -12,7 +12,8 @@ class Task:
             timestamp : str = "",
             description : str = "",
             GPUID : int = 0,
-            memoryConsumption : float = -1
+            memoryConsumption : float = -1,
+            multiCard : bool = False
         ):
         self.modelFilePath = modelFilePath
         self.datasetFilePath = datasetFilePath
@@ -23,3 +24,4 @@ class Task:
         self.description = description
         self.GPUID = GPUID
         self.memoryConsumption = memoryConsumption
+        self.multiCard = multiCard
