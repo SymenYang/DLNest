@@ -205,17 +205,17 @@ class TrainProcess(Process):
             # output in command Line    
             self.lifeCycle.commandLineOutput(nowEpoch,self.logDict,self.task.args)
 
-            # save checkpoint
-            if self.lifeCycle.needSaveModel(nowEpoch,self.logDict,self.task.args):
-                self.lifeCycle.BSaveModel()
-                self.__saveModel(nowEpoch)
-                self.lifeCycle.ASaveModel()
-
             # validation
             if self.lifeCycle.needValidation(nowEpoch,self.logDict,self.task.args):
                 self.lifeCycle.BValidation()
                 self.model.validate(self.valLoader,self.logDict)
                 self.lifeCycle.AVisualize()
+
+            # save checkpoint
+            if self.lifeCycle.needSaveModel(nowEpoch,self.logDict,self.task.args):
+                self.lifeCycle.BSaveModel()
+                self.__saveModel(nowEpoch)
+                self.lifeCycle.ASaveModel()
 
             # break decision
             if self.lifeCycle.needContinueTrain(nowEpoch,self.logDict,self.task.args):
