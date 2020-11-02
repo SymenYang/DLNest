@@ -85,7 +85,7 @@ class DLNest:
         
         for key in newArgValue:
             self.__replaceArgs(key,newArgValue[key],args[newArgName])
-            return
+        return
 
     def loadArgs(self,filePath : Path,args : dict):
         
