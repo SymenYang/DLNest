@@ -1,6 +1,12 @@
-from Scheduler import Scheduler
-from Train.Task import Task
-from Analyze.AnalyzeTask import AnalyzeTask
+try:
+    from Scheduler import Scheduler
+    from Train.Task import Task
+    from Analyze.AnalyzeTask import AnalyzeTask
+except Exception:
+    from .Scheduler import Scheduler
+    from .Train.Task import Task
+    from .Analyze.AnalyzeTask import AnalyzeTask
+
 import json
 from pathlib import Path
 import argparse
@@ -18,8 +24,7 @@ class Arguments:
 class DLNestArguments(Arguments):
     def __init__(self):
         super(DLNestArguments, self).__init__(desc="Arguments for DLNest trainner.")
-
-        self._parser.add_argument("-c",type=str,default="./DLNest_config.json",help="Config json for DLNest trainer")
+        self._parser.add_argument("-c",type=str,default="./DLNest/DLNest_config.json",help="Config json for DLNest trainer")
 
 class TaskArguments(Arguments):
     def __init__(self):
@@ -186,7 +191,7 @@ class DLNest:
                 return
 
             # 将FactoryFile复制进目标位置
-            factoryPath = Path("./FactoryFiles")
+            factoryPath = Path("./DLNest/FactoryFiles")
             shutil.copytree(factoryPath,projectPath)
 
             # 修改root_config中的save_root与root_file_path

@@ -1,4 +1,6 @@
-class ModelBase():
+from DLNest.Common.ModelBase import ModelBase
+
+class Model(ModelBase):
     def __init__(self,args : dict,datasetInfo : dict = None):
         pass
     

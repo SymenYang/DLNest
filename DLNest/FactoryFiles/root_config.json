@@ -10,9 +10,9 @@
         "max_ckpt_in_consistent_track" : 1
     },
     "root_file_path" : "",
-    "model_file_path" : "",
-    "dataset_file_path" : "",
-    "life_cycle_file_path" : "",
+    "model_file_path" : "./Model/Model.py",
+    "dataset_file_path" : "./Dataset/Dataset.py",
+    "life_cycle_file_path" : "./LifeCycle.py",
     "other_file_paths" : [],
     "child_jsons" : [
         "./model_config.json",

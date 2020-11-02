@@ -1,7 +1,11 @@
+from DLNest.Common.DatasetBase import DatasetBase
+
 import torch.utils.data as data
 import torch
 import numpy as np
 import json
+
+
 
 class DefaultDataset(data.Dataset):
     def __init__(self,args : dict):
@@ -14,7 +18,7 @@ class DefaultDataset(data.Dataset):
     def __len__(self):
         return self.length
 
-class DatasetBase:
+class Dataset(DatasetBase):
     def __init__(self,args : dict):
         """
         init dataset

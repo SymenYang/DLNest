@@ -1,5 +1,5 @@
-from DatasetBase import DatasetBase
-from ModelBase import ModelBase
+from .DatasetBase import DatasetBase
+from .ModelBase import ModelBase
 
 
 class LifeCycleBase():

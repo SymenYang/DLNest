@@ -4,11 +4,17 @@ import threading
 import random
 from pathlib import Path
 from apscheduler.schedulers.background import BackgroundScheduler
+try:
+    from Train.TrainProcess import TrainProcess
+    from Train.Task import Task
+    from Analyze.AnalyzeTask import AnalyzeTask
+    from Analyze.Analyzer import AnalyzerProcess
+except Exception:
+    from .Train.TrainProcess import TrainProcess
+    from .Train.Task import Task
+    from .Analyze.AnalyzeTask import AnalyzeTask
+    from .Analyze.Analyzer import AnalyzerProcess
 
-from Train.TrainProcess import TrainProcess
-from Train.Task import Task
-from Analyze.AnalyzeTask import AnalyzeTask
-from Analyze.Analyzer import AnalyzerProcess
 
 import sys
 import multiprocessing
@@ -72,7 +78,10 @@ class CardInfo:
 
     def lastUseTime(self):
         self.checkTasks()
-        return self.runningTask[-1][1]
+        if len(self.runningTask) > 0:
+            return self.runningTask[-1][1]
+        else:
+            return 0
 
 class Scheduler:
     def __init__(self,cards = [-1],timeDelay : int = 60, maxTaskPerCard = -1):

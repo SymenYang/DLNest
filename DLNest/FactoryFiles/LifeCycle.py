@@ -1,8 +1,9 @@
-from DatasetBase import DatasetBase
-from ModelBase import ModelBase
+from DLNest.Common.DatasetBase import DatasetBase
+from DLNest.Common.ModelBase import ModelBase
+from DLNest.Common.LifeCycleBase import LifeCycleBase
 
 
-class LifeCycleBase():
+class LifeCycle(LifeCycleBase):
     def __init__(self,model : ModelBase = None,dataset : DatasetBase = None, trainProcess = None, analyzeProcess = None):
         self.model = model
         self.dataset = dataset
