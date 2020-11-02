@@ -17,7 +17,6 @@ class CardInfo:
     def __init__(self,id,realID):
         self.id = id
         self.realID = realID
-        self.lastUseTime = 0.0
         self.nowTask = 0
         self.runningTask = []
         try:
@@ -61,7 +60,7 @@ class CardInfo:
     def checkTasks(self):
         newList = []
         for item in self.runningTask:
-            if not item.is_alive():
+            if not item[0].is_alive():
                 self.nowTask -= 1
             else:
                 newList.append(item)
@@ -69,8 +68,11 @@ class CardInfo:
 
     def addATask(self,newTask : TrainProcess):
         self.nowTask += 1
-        self.runningTask.append(newTask)
-        self.lastUseTime = time.time()
+        self.runningTask.append((newTask,time.time()))
+
+    def lastUseTime(self):
+        self.checkTasks()
+        return self.runningTask[-1][1]
 
 class Scheduler:
     def __init__(self,cards = [-1],timeDelay : int = 60, maxTaskPerCard = -1):
@@ -111,7 +113,7 @@ class Scheduler:
             return False
 
         # 判断上次运行时间距今是否满足条件
-        delta = time.time() - card.lastUseTime
+        delta = time.time() - card.lastUseTime()
         if delta < self.timeDelay:
             return False
 
@@ -139,7 +141,7 @@ class Scheduler:
             if item.nowTask >= self.maxTaskPerCard:
                 continue
         
-            delta = time.time() - item.lastUseTime
+            delta = time.time() - item.lastUseTime()
             if delta < self.timeDelay:
                 continue
         
