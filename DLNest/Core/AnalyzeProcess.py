@@ -6,14 +6,15 @@ import json
 import torch
 from pathlib import Path
 import multiprocessing
-from multiprocessing import Process
-from prompt_toolkit import PromptSession,HTML
-from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
+from multiprocessing import Process,Pipe,connection,Queue
 
 try:
-    from AnalyzeTask import AnalyzeTask
+    from DLNest.BridgeLayers.InformationLayer import AnalyzeTask
+    from DLNest.BridgeLayers.OutputLayers import AnalyzerBuffer
 except ImportError:
-    from .AnalyzeTask import AnalyzeTask
+    sys.path.append("..")
+    from BridgeLayers.InformationLayer import AnalyzeTask
+    from BridgeLayers.OutputLayers import AnalyzerBuffer
 
 class AnalyzeRunner:
     def __init__(self,args : dict, model , dataset):
@@ -21,22 +22,18 @@ class AnalyzeRunner:
         self.model = model
         self.dataset = dataset
 
-class AnalyzerProcess(Process):
-    def __init__(self,task : AnalyzeTask):
-        super(AnalyzerProcess, self).__init__()
+class AnalyzeProcess(Process):
+    def __init__(self,task : AnalyzeTask,commandPipe : connection.Connection, outputQueue : Queue):
+        super(AnalyzeProcess, self).__init__()
         self.task = task
+        self.output = AnalyzerBuffer()
         # 如果两个path不是目录的话，直接返回
         if not (self.task.recordPath.is_dir() and self.task.scriptPath.is_dir()):
-            raise Exception("Wrong directory arguments.")
+            self.output.logError("Wrong directory arguments.")
             return
-
-        self.file = Path(os.path.realpath(__file__))
-        self.parentDir = self.file.parent
-
-        self.DEBUG = True
-
-        # 用以在子进程中操作主进程的stdin
-        self.stdin = None
+        self.bufferPos = 0
+        self.commandPipe = commandPipe
+        self.outputQueue = outputQueue
 
     def __resolveAbOrRePathForAnalyze(self,filePath : Path,rootFilePath : Path):
         if filePath.is_absolute():
@@ -55,11 +52,6 @@ class AnalyzerProcess(Process):
         return module
 
     def __loadModules(self):
-        # 将Common中的三个Base计入sys.path
-        commonDirName = str(self.parentDir.parent / "Common")
-        if not commonDirName in sys.path:
-            sys.path.append(commonDirName)
-        
         # 将保存文件夹内的文件计入sys.path
         recordDirName = str(self.task.recordPath)
         if not recordDirName in sys.path:
@@ -69,15 +61,26 @@ class AnalyzerProcess(Process):
         with (self.task.recordPath / "args.json").open('r') as fp:
             self.args = json.load(fp)
     
-        # 加载model dataset lifecycle
+        # 将model、dataset lifecycle所在的文件夹计入sys.path
         modelFilePath = self.__resolveAbOrRePathForAnalyze(Path(self.args["model_file_path"]),Path(self.args["root_file_path"]))
         datasetFilePath = self.__resolveAbOrRePathForAnalyze(Path(self.args["dataset_file_path"]),Path(self.args["root_file_path"]))
-        lifeCyclelFilePath = self.__resolveAbOrRePathForAnalyze(Path(self.args["life_cycle_file_path"]),Path(self.args["root_file_path"]))
+        lifeCycleFilePath = self.__resolveAbOrRePathForAnalyze(Path(self.args["life_cycle_file_path"]),Path(self.args["root_file_path"]))
+
+        modelFileDir = str(modelFilePath.parent)
+        if not modelFileDir in sys.path:
+            sys.path.append(modelFileDir)
+        datasetFileDir = str(datasetFilePath.parent)
+        if not datasetFileDir in sys.path:
+            sys.path.append(datasetFileDir)
+        lifeCycleFileDir = str(lifeCycleFilePath.parent)
+        if not lifeCycleFileDir in sys.path:
+            sys.path.append(lifeCycleFileDir)
+
+        # 加载model dataset lifecycle
         self.modelModule = self.__loadAModule(modelFilePath,"Model")
         self.datasetModule = self.__loadAModule(datasetFilePath,"Dataset")
-        self.lifeCycleModule = self.__loadAModule(lifeCyclelFilePath,"LifeCycle")
+        self.lifeCycleModule = self.__loadAModule(lifeCycleFilePath,"LifeCycle")
         
-
     def __setCheckpoint(self):
         # 找到checkpoint的文件，并加入args
         checkpointID = self.task.checkpointID
@@ -85,7 +88,7 @@ class AnalyzerProcess(Process):
         if not checkpointFilePath.is_file():
             raise Exception("Wrong checkpoint id.")
         self.args['ckpt_load'] = str(checkpointFilePath)
-
+    
     def __initLifeCycle(self):
         lifeCycleName = self.args['life_cycle_name']
         if lifeCycleName in dir(self.lifeCycleModule):
@@ -113,17 +116,20 @@ class AnalyzerProcess(Process):
             if "ckpt_load" in self.args:
                 try:
                     ckpt_file = Path(self.args['ckpt_load'])
-                    if ckpt_file.is_file():
-                        stateDict = torch.load(self.args['ckpt_load'])
-                        self.model.loadSaveDict(stateDict)
-                        self.startEpoch = stateDict['epoch']
+                    if ckpt_file.exists():
+                        if ckpt_file.is_file():
+                            stateDict = torch.load(self.args['ckpt_load'])
+                            self.model.loadSaveDict(stateDict)
+                            self.startEpoch = stateDict['epoch']
+                    else:
+                        self.output.logIgnError("Cannot load ckpt " + str(self.args['ckpt_load']) + ".")
                 except Exception as e:
-                    print(e)
-                    print('load ckpt ' , str(self.args['ckpt_load']) , 'fail, stop')
-                    exit(0)
+                    self.output.logError(str(e))
+                    self.output.logError("load ckpt " + str(self.args["ckpt_load"]) + " fail, stop")
+                    raise Exception("Cannot load checkpoint")
         else:
             raise Exception("Cannot find model class")
-
+    
     def __initAll(self):
         self.__loadModules()
         self.__setCheckpoint()
@@ -146,10 +152,8 @@ class AnalyzerProcess(Process):
 
         # 设置runner，作为跑脚本的主体，也就是self
         self.runner = AnalyzeRunner(self.args,self.model,self.dataset)
-
-    def __startTest(self,commandWordList):
-        command = commandWordList[1]
-        # 找到脚本文件
+    
+    def startTest(self,command):
         scriptPath = self.task.scriptPath / (command + ".py")
         try:
             scriptModule = self.__loadAModule(scriptPath,"AScript")
@@ -159,45 +163,70 @@ class AnalyzerProcess(Process):
             scriptMethod(self.runner)
         except Exception as e:
             # 脚本出错不退出analyzer
-            print(e)
+            self.output.logIgnError(str(e))
             return
 
-    def __inputLoop(self):
-        self.session = PromptSession(auto_suggest=AutoSuggestFromHistory())
-        while True:
-            command = self.session.prompt(HTML("<skyblue><b>DLNest Analyzer>></b></skyblue>"))
-            commandWordList = command.strip().split(" ")
-            if commandWordList[0] == 'run':
-                self.__startTest(commandWordList)
-            elif commandWordList[0] == 'exit':
-                break
-            else:
-                print("Use \'run\' to start a new analyze.")
-            
-    def run(self):
-        sys.stdin = self.stdin
-        os.environ["CUDA_VISIBLE_DEVICES"] = str(self.task.GPUID)
-        if self.DEBUG:
-            print("Running on GPU:",self.task.GPUID)
+    def __getMoreOutput(self):
+        offset,styledText = self.output.getStyledText(self.bufferPos,-1)
+        if styledText is None:
+            self.bufferPos = offset
+        else:
+            self.bufferPos += len(styledText)
+        return styledText
 
-        self.__initAll()
-        self.__inputLoop()
+    def __inputLoop(self):
+        while True:
+            try:
+                # 阻塞地得到命令
+                command = self.commandPipe.recv()
+                # 运行命令
+                self.startTest(command)
+                # 得到额外的输出
+                styledText = self.__getMoreOutput()
+                # 将输出非阻塞的放入queue中
+                self.outputQueue.put(styledText,block=False)
+            except Exception as e:
+                print(e)
+                self.output.logIgnError(str(e))
+
+    def run(self):
+        sys.stdout = self.output
+        sys.stderr = self.output
+        self.output.appName = "DLNest Analyze Process"
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(self.task.GPUID)
+        self.output.logMessage("Runing on GPU: " + str(self.task.GPUID))
+        try:
+            self.__initAll()
+            self.outputQueue.put(self.__getMoreOutput(),block=False)
+            self.__inputLoop()
+        except Exception as e:
+            self.output.logError(str(e))
+            self.outputQueue.put(self.__getMoreOutput(),block=False)
 
 if __name__ == "__main__":
-    ta = AnalyzeTask(
-        recordPath = Path("/root/code/Phoenix_DLNest/Saves/2020-09-09_12:40:49_0"),
-        scriptPath = Path("/root/code/Phoenix_DLNest/AnalyzeScripts"),
-        checkpointID = 900,
-        GPUID = 0
+    TA = AnalyzeTask(
+        recordPath = "/root/code/DLNestTest/Saves/2020-11-08_21:36:54_0",
+        scriptPath = "/root/code/DLNestTest/AnalyzeScripts",
+        checkpointID = 208,
+        GPUID=0
     )
-    session = PromptSession(auto_suggest=AutoSuggestFromHistory())
-    session.prompt("test>>")
-    AP = AnalyzerProcess(ta)
-    AP.stdin = sys.stdin
-    tmpstdin = sys.stdin
-    sys.stdin = None
+    receiver,putter = Pipe(False)
+    queue = Queue()
+    AP = AnalyzeProcess(TA,receiver,queue)
     AP.start()
+    putter.send("test")
+    try:
+        output = queue.get(True)
+        print(output)
+    except Exception as e:
+        print(e)
+    input()
+    putter.send("test")
+    try:
+        output = queue.get(True)
+        print(output)
+    except Exception as e:
+        print(e)
+    #putter.close()
+    AP.terminate()
     AP.join()
-    sys.stdin = tmpstdin
-    print('here')
-    session.prompt("test>>")

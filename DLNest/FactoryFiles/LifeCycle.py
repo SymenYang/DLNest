@@ -13,6 +13,12 @@ class LifeCycle(LifeCycleBase):
     def BAll(self):
         pass
 
+    def BSaveInit(self):
+        pass
+
+    def ASaveInit(self):
+        pass
+
     def BDatasetInit(self):
         pass
 
@@ -23,12 +29,6 @@ class LifeCycle(LifeCycleBase):
         pass
 
     def AModelInit(self):
-        pass
-
-    def BSaveInit(self):
-        pass
-
-    def ASaveInit(self):
         pass
 
     def BTrain(self):

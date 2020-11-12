@@ -9,13 +9,15 @@ import torch
 from pathlib import Path
 
 try:
-    from Task import Task
+    from DLNest.BridgeLayers.InformationLayer import TrainTask
+    from DLNest.BridgeLayers.OutputLayers import TrainStdout
 except ImportError:
-    from .Task import Task
+    sys.path.append("..")
+    from BridgeLayers.InformationLayer import TrainTask
 
 
 class TrainProcess(Process):
-    def __init__(self,task : Task):
+    def __init__(self,task : TrainTask):
         super(TrainProcess, self).__init__()
         self.task = task
         self.DEBUG = True
@@ -103,7 +105,7 @@ class TrainProcess(Process):
         # init saving root
         saveRoot = Path(self.task.args["save_root"])
         saveDir = saveRoot / self.task.timestamp
-        print("[Train Process] Saving to " + str(saveDir))
+        #print("[Train Process] Saving to " + str(saveDir))
         saveDir.mkdir(parents=True,exist_ok=True)
 
         # checkpoints saving dir
@@ -133,14 +135,16 @@ class TrainProcess(Process):
         # 重定向输出
         self.outputFile = saveDir / "_output.txt"
         self.outputFP = self.outputFile.open('w')
-        sys.stdout = self.outputFP
-        sys.stderr = self.outputFP
+        self.outputDelegate = TrainStdout(self.outputFP)
+        sys.stdout = self.outputDelegate
+        sys.stderr = self.outputDelegate
 
         # save args
         argsPath = saveDir / "args.json"
         argsFP = argsPath.open('w')
         self.task.args["_description"] = self.task.description
         self.task.args["_pid"] = os.getpid()
+        #self.pid = os.getpid()
         self.task.args["root_file_path"] = str(saveDir)
         json.dump(self.task.args,argsFP,sort_keys=True, indent=4, separators=(',', ':'))
         argsFP.close()
@@ -229,14 +233,19 @@ class TrainProcess(Process):
             os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(ids)
         else:
             os.environ["CUDA_VISIBLE_DEVICES"] = str(self.task.GPUID)
-        if self.DEBUG:
-            print("[Train Process] Running on GPU:",self.task.GPUID,",",self.task.description)
+
+
 
         self.__loadModule()
         self.__initLifeCycle()
 
         self.lifeCycle.trainProcess = self
         self.lifeCycle.BAll()
+        
+        # initialize save folder
+        self.lifeCycle.BSaveInit()
+        self.__initSave()
+        self.lifeCycle.ASaveInit()
         
         # initialize dataset
         self.lifeCycle.BDatasetInit()
@@ -250,11 +259,6 @@ class TrainProcess(Process):
         self.lifeCycle.model = self.model
         self.lifeCycle.AModelInit()
 
-        # initialize save folder
-        self.lifeCycle.BSaveInit()
-        self.__initSave()
-        self.lifeCycle.ASaveInit()
-
         # train
         self.lifeCycle.BTrain()
         self.__train()
@@ -266,30 +270,32 @@ class TrainProcess(Process):
 
 if __name__ == '__main__':
     multiprocessing.set_start_method('spawn')
-    ta = Task(
-        modelFilePath = Path("/root/code/DLNestTest/TestModel.py"),
-        datasetFilePath = Path("/root/code/DLNestTest/Dataset.py"),
-        lifeCycleFilePath = Path("/root/code/DLNestTest/LifeCycle.py"),
-        otherFilePaths = [
-            Path("/root/code/DLNestTest/DatasetBase.py"),
-            Path("/root/code/DLNestTest/__init__.py")
-        ],
+    ta = TrainTask(
         args = {
-            "save_root" : "/root/code/DLNestTest/Saves",
-            "model_name" : "ModelTest",
-            "dataset_name" : "DatasetTest",
-            "life_cycle_name" : "LifeCycleTest",
-            "checkpoint_args" : {
-                "max_ckpt_in_slow_track" : 3,
-                "dilation_in_slow_track" : 2,
-                "max_ckpt_in_fast_track" : 2,
-                "max_ckpt_in_consistent_track" : 2
-            }
+        "save_root":"/root/code/DLNestTest2/Saves",
+        "model_name":"Model",
+        "dataset_name":"Dataset",
+        "life_cycle_name":"LifeCycle",
+        "checkpoint_args":{
+            "max_ckpt_in_slow_track":100,
+            "dilation_in_slow_track":100,
+            "max_ckpt_in_fast_track":2,
+            "max_ckpt_in_consistent_track":1
         },
-        GPUID = 0,
-        timestamp = "now",
+        "root_file_path":"/root/code/DLNestTest2",
+        "model_file_path":"./Model/Model.py",
+        "dataset_file_path":"./Dataset/Dataset.py",
+        "life_cycle_file_path":"./LifeCycle.py",
+        "other_file_paths":[],
+        "child_jsons":[
+            "./model_config.json",
+            "./dataset_config.json"
+        ]
+        },
         description = "none"
     )
+    ta.GPUUD = 0
+    ta.timestamp = "now"
     TP = TrainProcess(ta)
     TP.start()
     TP.join()
