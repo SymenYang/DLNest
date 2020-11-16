@@ -37,6 +37,12 @@ class LifeCycle(LifeCycleBase):
     def ATrain(self):
         pass
 
+    def BOneEpoch(self):
+        pass
+
+    def AOneEpoch(self):
+        pass
+    
     def BModelOneStep(self):
         pass
 

@@ -91,7 +91,8 @@ class TrainTask:
         args : dict,
         description : str = "",
         memoryConsumption : float = -1,
-        multiCard : bool = False
+        multiCard : bool = False,
+        noSave : bool = False
         ):
         self.ID = "train_" + ("%.4f" % time.time())[6:] + "_" + str(random.randint(0,9))
         self.modelFilePath = Path(args["model_file_path"])
@@ -105,6 +106,7 @@ class TrainTask:
         self.timestamp = ""
         self.GPUID = -1,
         self.status = "Pending"
+        self.noSave = noSave
     
     def getDict(self):
         return {
@@ -115,7 +117,8 @@ class TrainTask:
             "multi_card" : self.multiCard,
             "timestamp" : self.timestamp,
             "GPU_ID" : self.GPUID,
-            "status" : self.status
+            "status" : self.status,
+            "no_save" : self.noSave
         }
 
 class AnalyzeTask:

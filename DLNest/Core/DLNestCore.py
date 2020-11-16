@@ -120,7 +120,8 @@ class DLNestCore:
         freqConfig : str = "", 
         memoryConsumption : int = -1,
         jumpInLine : bool = False,
-        multiCard : bool = False
+        multiCard : bool = False,
+        noSave : bool = False
     ):
         try:
             taskArgsPath = Path(rootConfig)
@@ -145,7 +146,8 @@ class DLNestCore:
                 args = taskArgs,
                 description=description,
                 memoryConsumption=memoryConsumption,
-                multiCard=multiCard
+                multiCard=multiCard,
+                noSave=noSave
             )
 
             # 运行Task

@@ -23,6 +23,7 @@ class TaskArguments(Arguments):
         self._parser.add_argument("-f",type=str, default = "", help="frequently changing configuration json file for this task.(default:None)")
         self._parser.add_argument("-j",type=str, default = "False", help="True for jump in line.(default: False)")
         self._parser.add_argument("-mc",type=str,default = "False", help="True to use multi card if single card can't handle")
+        self._parser.add_argument("-ns",type=str,default = "False", help="True to use multi card if single card can't handle")
 
 class AnalyzeArguments(Arguments):
     def __init__(self):
@@ -57,7 +58,8 @@ class DLNestDEBUG:
             freqConfig=args.f,
             memoryConsumption=args.m,
             jumpInLine=True if args.j == "True" else False,
-            multiCard=True if args.mc == "True" else False
+            multiCard=True if args.mc == "True" else False,
+            noSave=True if args.ns == "True" else False
         )
     
     def newProject(self,commandWordList : list):

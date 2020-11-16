@@ -23,6 +23,7 @@ class TaskArguments(Arguments):
         self._parser.add_argument("-f",type=str, default = "", help="frequently changing configuration json file for this task.(default:None)")
         self._parser.add_argument("-j",action='store_true', help="True for jump in line.(default: False)")
         self._parser.add_argument("-mc",action='store_true', help="True to use multi card if single card can't handle")
+        self._parser.add_argument("-ns",action='store_true', help="True to save to the NOSAVE dir")
 
         self._parser.error = raiseError
 
@@ -77,8 +78,9 @@ class CommandCommunicator:
                 "description" : args.d,
                 "freq_config" : args.f,
                 "memory_consumption" : args.m,
-                "jumpInLine" : True if args.j == "True" else False,
-                "multiCard" : True if args.mc == "True" else False
+                "jump_in_line" : args.j,
+                "multi_card" : args.mc,
+                "no_save" : args.ns
             })
             return r
         except Exception:

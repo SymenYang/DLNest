@@ -42,6 +42,14 @@ class TrainProcess(Process):
         self.datasetModule = self.__loadAModule(self.task.datasetFilePath,"Dataset")
         self.lifeCycleModule = self.__loadAModule(self.task.lifeCycleFilePath,"LifeCycle")
 
+    def __loadLifeCycle(self):
+        self.lifeCycleModule = self.__loadAModule(self.task.lifeCycleFilePath,"LifeCycle")
+
+    def __loadOthers(self):
+        self.modelModule = self.__loadAModule(self.task.modelFilePath,"Model")
+        self.datasetModule = self.__loadAModule(self.task.datasetFilePath,"Dataset")
+        
+
     def __initLifeCycle(self):
         lifeCycleName = self.task.args['life_cycle_name']
         if lifeCycleName in dir(self.lifeCycleModule):
@@ -194,6 +202,7 @@ class TrainProcess(Process):
     def __train(self):
         nowEpoch = self.startEpoch
         while True:
+            self.lifeCycle.BOneEpoch()
             for _iter,data in enumerate(self.trainLoader):
                 # run one step
                 self.lifeCycle.BModelOneStep()
@@ -213,14 +222,15 @@ class TrainProcess(Process):
             if self.lifeCycle.needValidation(nowEpoch,self.logDict,self.task.args):
                 self.lifeCycle.BValidation()
                 self.model.validate(self.valLoader,self.logDict)
-                self.lifeCycle.AVisualize()
+                self.lifeCycle.AValidation()
 
             # save checkpoint
             if self.lifeCycle.needSaveModel(nowEpoch,self.logDict,self.task.args):
                 self.lifeCycle.BSaveModel()
                 self.__saveModel(nowEpoch)
                 self.lifeCycle.ASaveModel()
-
+            
+            self.lifeCycle.AOneEpoch()
             # break decision
             if self.lifeCycle.needContinueTrain(nowEpoch,self.logDict,self.task.args):
                 nowEpoch += 1
@@ -234,9 +244,11 @@ class TrainProcess(Process):
         else:
             os.environ["CUDA_VISIBLE_DEVICES"] = str(self.task.GPUID)
 
+        if self.task.noSave:
+            self.task.timestamp = "NOSAVE"
 
 
-        self.__loadModule()
+        self.__loadLifeCycle()
         self.__initLifeCycle()
 
         self.lifeCycle.trainProcess = self
@@ -246,6 +258,8 @@ class TrainProcess(Process):
         self.lifeCycle.BSaveInit()
         self.__initSave()
         self.lifeCycle.ASaveInit()
+
+        self.__loadOthers()
         
         # initialize dataset
         self.lifeCycle.BDatasetInit()
