@@ -7,10 +7,10 @@ import tornado.options
 class DLNestServer:
     def __init__(self):
         tornado.options.define('port',default=9999,type=int,help="DLNest server port")
-        tornado.options.define('DLNestConfig',default="",type=str,help="DLNest config file")
+        tornado.options.define('DLNest-config',default="",type=str,help="DLNest config file")
         tornado.options.parse_command_line()
 
-        self.core = DLNestCore(tornado.options.options.DLNestConfig)
+        self.core = DLNestCore(tornado.options.options.DLNest_config)
         self.app = tornado.web.Application(
             [
                 (r'/new_proj',NewProjectHandler,{"core" : self.core}),

@@ -167,7 +167,7 @@ class AnalyzerBuffer(OutputLayer,io.TextIOWrapper):
         self.appName = "DLNest Analyzer"
 
     def write(self,message : str):
-        self.putStyledText('message',message)
+        self.logMessage(message)
 
     def flush(self):
         ...

@@ -160,11 +160,14 @@ class AnalyzeProcess(Process):
             # 找到其中的experience函数
             scriptMethod = scriptModule.__getattribute__("experience")
             # experience函数固定只有self一个参数，使用self.runner填充
+            self.output.appName = command
             scriptMethod(self.runner)
         except Exception as e:
             # 脚本出错不退出analyzer
             self.output.logIgnError(str(e))
             return
+        finally:
+            self.output.appName = "DLNest Analyze Process"
 
     def __getMoreOutput(self):
         offset,styledText = self.output.getStyledText(self.bufferPos,-1)

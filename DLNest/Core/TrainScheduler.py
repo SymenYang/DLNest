@@ -100,7 +100,10 @@ class TrainScheduler:
         nowTime = time.time()
         if int(nowTime) != self.lastTime: # time 是实数，需要判断整秒数相同来避免太接近的几次训练使用同一个文件夹
             self.nowID = 0
-        task.timestamp = time.strftime('%Y-%m-%d_%H:%M:%S',time.localtime(nowTime)) + "_" + str(self.nowID)
+        if task.noSave:
+            task.timestamp = "NOSAVE"
+        else:
+            task.timestamp = time.strftime('%Y-%m-%d_%H:%M:%S',time.localtime(nowTime)) + "_" + str(self.nowID)
         self.nowID += 1
         self.lastTime = int(nowTime)
         # 赋予显卡
@@ -119,7 +122,10 @@ class TrainScheduler:
         nowTime = time.time()
         if int(nowTime) != self.lastTime: # time 是实数，需要判断整秒数相同来避免太接近的几次训练使用同一个文件夹
             self.nowID = 0
-        task.timestamp = time.strftime('%Y-%m-%d_%H:%M:%S',time.localtime(nowTime)) + "_" + str(self.nowID)
+        if task.noSave:
+            task.timestamp = "NOSAVE"
+        else:
+            task.timestamp = time.strftime('%Y-%m-%d_%H:%M:%S',time.localtime(nowTime)) + "_" + str(self.nowID)
         self.nowID += 1
         self.lastTime = int(nowTime)
         # 赋予显卡
@@ -148,7 +154,7 @@ class TrainScheduler:
             if not jumpInLine:
                 # 不插队，检查是否有等待
                 if len(pendingTasks) > 0:
-                    self.output.logMessage("No card valid now, task have been appended into pending list.",app="Train Scheduler")
+                    self.output.logMessage("No card valid now, task has been appended into pending list.",app="Train Scheduler")
                     pendingTasks.append(task)
                     return False
                 
@@ -160,10 +166,10 @@ class TrainScheduler:
                     #没有可用卡，加入队列
                     if len(runningCards) == 0:
                         if jumpInLine:
-                            self.output.logMessage("No card valid now, task have been put in the front of pending list.",app="Train Scheduler")
+                            self.output.logMessage("No card valid now, task has been put in the front of the pending list.",app="Train Scheduler")
                             pendingTasks.insert(0,task)
                         else:
-                            self.output.logMessage("No card valid now, task have been appended into pending list.",app="Train Scheduler")
+                            self.output.logMessage("No card valid now, task has been appended into pending list.",app="Train Scheduler")
                             pendingTasks.append(task)
                         return False
                     
@@ -182,10 +188,10 @@ class TrainScheduler:
                 # 若没有可用卡，则加入等待队列，若插队，则进入等待队列首
                 if runningCard is None:
                     if jumpInLine:
-                        self.output.logMessage("No card valid now, task have been put in the front of pending list.",app="Train Scheduler")
+                        self.output.logMessage("No card valid now, task has been put in the front of the pending list.",app="Train Scheduler")
                         pendingTasks.insert(0,task)
                     else:
-                        self.output.logMessage("No card valid now, task have been appended into pending list.",app="Train Scheduler")
+                        self.output.logMessage("No card valid now, task has been appended into pending list.",app="Train Scheduler")
                         pendingTasks.append(task)
                     return False
                 

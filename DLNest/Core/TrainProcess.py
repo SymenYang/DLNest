@@ -48,7 +48,6 @@ class TrainProcess(Process):
     def __loadOthers(self):
         self.modelModule = self.__loadAModule(self.task.modelFilePath,"Model")
         self.datasetModule = self.__loadAModule(self.task.datasetFilePath,"Dataset")
-        
 
     def __initLifeCycle(self):
         lifeCycleName = self.task.args['life_cycle_name']
@@ -95,7 +94,7 @@ class TrainProcess(Process):
         '''
         if filePath.is_absolute():
             if filePath.is_dir():
-                shutil.copytree(filePath,saveDir / filePath.stem)
+                shutil.copytree(filePath,saveDir / filePath.stem,)
             else:
                 shutil.copy(filePath,saveDir / (filePath.stem + filePath.suffix))
         else:
@@ -114,6 +113,8 @@ class TrainProcess(Process):
         saveRoot = Path(self.task.args["save_root"])
         saveDir = saveRoot / self.task.timestamp
         #print("[Train Process] Saving to " + str(saveDir))
+        if saveDir.exists():
+            shutil.rmtree(saveDir)
         saveDir.mkdir(parents=True,exist_ok=True)
 
         # checkpoints saving dir
@@ -243,10 +244,6 @@ class TrainProcess(Process):
             os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(ids)
         else:
             os.environ["CUDA_VISIBLE_DEVICES"] = str(self.task.GPUID)
-
-        if self.task.noSave:
-            self.task.timestamp = "NOSAVE"
-
 
         self.__loadLifeCycle()
         self.__initLifeCycle()

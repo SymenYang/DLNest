@@ -12,6 +12,7 @@ from .Communicators.Output import OutputCommunicator
 from .Communicators.Info import InfoCommunicator
 import json
 from pathlib import Path
+import argparse
 
 class Client:
     def __init__(self,url : str):
@@ -162,5 +163,14 @@ class Client:
             pass
 
 if __name__ == "__main__":
-    client = Client("http://127.0.0.1:9999")
-    client.getApp().run()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-u",type=str, default="http://127.0.0.1:9999",help="DLNest server address")
+    args=parser.parse_args()
+    try:
+        url = args.u
+        if url[:7] != "http://":
+            url = "http://" + url
+        client = Client(url)
+        client.getApp().run()
+    except Exception as e:
+        print(e)
