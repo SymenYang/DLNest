@@ -12,48 +12,49 @@ from prompt_toolkit.formatted_text.base import StyleAndTextTuples
 
 from .ResultsOutput import MyTextArea
 
-class taskLexer(Lexer):
+class cardsLexer(Lexer):
     def __init__(self):
-        self.taskInfo = []
-        self.timestamp_length = 21
+        self.cardsInfo = []
+        self.freeMemoryLength = 8
+        self.runningTasksLength = 3
     
     def get_text(self):
-        return "".join(["\n" for _ in self.taskInfo])
+        return "".join(["\n" for _ in self.cardsInfo])
 
     def lex_document(self,document : Document) -> Callable[[int], StyleAndTextTuples]:
         def get_line(lineno : int) -> StyleAndTextTuples:
             try:
-                task = self.taskInfo[lineno]
-                style_base = "class:pending_task"
-                if task["status"] == "Running":
-                    style_base = "class:running_task"
-                ID = task["ID"]
-                GPU = str(task["GPU_ID"]) if task["GPU_ID"] != [-1] else " "
-                description = task["description"]
-                timestamp = task["timestamp"]
+                card = self.cardsInfo[lineno]
+                ID = card["real_ID"]
+                isBreak = "Break" if card["is_break"] else "Valid"
+                break_class = "break" if card["is_break"] else "valid"
+                freeMemory = str(int(card["free_memory"])) + " MB"
+                runningTasks = str(len(card["running_tasks"]))
+
+                if len(freeMemory) < self.freeMemoryLength:
+                    freeMemory = " " * (self.freeMemoryLength - len(freeMemory)) + freeMemory
                 
-                if len(timestamp) < self.timestamp_length:
-                    timestamp += " " * (self.timestamp_length - len(timestamp))
+                if len(runningTasks) < self.runningTasksLength:
+                    runningTasks = " " * (self.runningTasksLength - len(runningTasks)) + runningTasks
 
                 return [
-                    (style_base + "_status" , "Status : " + task["status"] + " "),
-                    (style_base +"_id" , " ID : " + ID + " "),
-                    (style_base +"_gpu" , " GPU : " + GPU + " "),
-                    (style_base +"_time" , " Folder : " + timestamp + " "),
-                    (style_base +"_des" , " Note : " + description + " ")
+                    ("class:cards_id"                   ,"Cards: " + str(ID) + " "),
+                    ("class:cards_status_" + break_class," " + isBreak + " "),
+                    ("class:cards_free_memory"          ," F-Memory: " + freeMemory + " "),
+                    ("class:cards_tasks"                ," #Tasks: " + runningTasks + " ")
                 ]
             except Exception as e:
                 return []
         
         return get_line
 
-class TaskInfoShower:
+class CardsInfoShower:
     def __init__(
         self, 
         title : str = "Tasks",
         routineTask = None,
         freq : int = 1,
-        style : str = "class:task_info_shower"
+        style : str = "class:cards_info_shower"
     ):
 
         self.title = title
@@ -62,7 +63,7 @@ class TaskInfoShower:
         if not routineTask is None:
             self.scheduler.add_job(self.routineTask,'interval',seconds=freq,args=[self])
         self.scheduler.start()
-        self.lexer =taskLexer()
+        self.lexer =cardsLexer()
 
         self.shower = MyTextArea(
             lexer = self.lexer,
@@ -74,7 +75,8 @@ class TaskInfoShower:
             self.shower,
             self.title,
             style = self.style,
-            height=10
+            height=10,
+            width=55
         )
     
     def getWindow(self):

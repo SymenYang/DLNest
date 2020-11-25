@@ -287,3 +287,13 @@ class DLNestCore:
     
     def getAnalyzeTask(self):
         return self.analyzer.getTaskInfo()
+
+    def getCardsInfo(self):
+        return self.information.getCardsInfo()
+    
+    def changeCards(self,cards = []):
+        try:
+            self.information.changeValidCards(cards)
+        except Exception as e:
+            self.DLNestBuffer.logError(str(e))
+            self.DLNestBuffer.logError("Failed to change valid cards")

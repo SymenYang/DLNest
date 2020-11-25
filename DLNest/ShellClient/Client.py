@@ -6,6 +6,7 @@ from prompt_toolkit.styles import Style
 from .Windows.CommandInput import CommandInput
 from .Windows.ResultsOutput import ResultsOutput,testTask,AnalyzerOutput
 from .Windows.TaskInfoShower import TaskInfoShower
+from .Windows.CardsInfoShower import CardsInfoShower
 
 from .Communicators.Command import CommandCommunicator
 from .Communicators.Output import OutputCommunicator
@@ -25,11 +26,12 @@ class Client:
         self.DLOutput = ResultsOutput(routineTask=self.routineTaskDLO,title = "DLNest Output (F2)",style="class:dlnest_output")
         self.ANOutput = AnalyzerOutput(routineTask=self.routineTaskANO,title = "Analyzer Output (F3)",style="class:analyzer_output",analyzerRoutineTask=self.routineTaskANInfo)
         self.TaskInfo = TaskInfoShower(routineTask = self.routineTaskDLInfo,title = "Tasks (F4)")
-        self.w1,self.w2,self.w3,self.w4 = self.CMDIN.getWindow(),self.DLOutput.getWindow(),self.ANOutput.getWindow(),self.TaskInfo.getWindow()
+        self.CardsInfo = CardsInfoShower(routineTask = self.routineTaskCards,title = "Cards (F5)")
+        self.w1,self.w2,self.w3,self.w4,self.w5 = self.CMDIN.getWindow(),self.DLOutput.getWindow(),self.ANOutput.getWindow(),self.TaskInfo.getWindow(),self.CardsInfo.getWindow()
         self.container = HSplit([
             self.w1,
             VSplit([self.w2,self.w3]),
-            self.w4
+            VSplit([self.w4,self.w5])
         ])
 
         self.kb = KeyBindings()
@@ -38,7 +40,7 @@ class Client:
             event.app.exit()
 
         @self.kb.add('f1')
-        def focus2(event):
+        def focus1(event):
             event.app.layout.focus(self.w1)
 
         @self.kb.add('f2')
@@ -46,12 +48,16 @@ class Client:
             event.app.layout.focus(self.w2)
 
         @self.kb.add('f3')
-        def focus2(event):
+        def focus3(event):
             event.app.layout.focus(self.w3)
 
         @self.kb.add('f4')
-        def focus2(event):
+        def focus4(event):
             event.app.layout.focus(self.w4)
+
+        @self.kb.add('f5')
+        def focus5(event):
+            event.app.layout.focus(self.w5)
 
         self.style = Style.from_dict({
             "frame.border" : "fg:#ffb6c1",
@@ -72,7 +78,13 @@ class Client:
             "pending_task_gpu" : "bg:#556b2f",
             "pending_task_des" : "bg:#c71585",
             "pending_task_time" : "bg:#2e3b37",
-            "task_info_shower" : "bg:#008bc0"
+            "task_info_shower" : "bg:#008bc0",
+            "cards_info_shower" : "bg:#008bc0",
+            "cards_id" : "bg:#303030",
+            "cards_status_valid" : "bg:#3cb371 bold",
+            "cards_status_break" : "bg:#a01010 bold",
+            "cards_free_memory" : "bg:#556b2f",
+            "cards_tasks" :  "bg:#c71585"
         })
 
         self.layout = Layout(self.container,focused_element=self.w1)
@@ -157,6 +169,19 @@ class Client:
             return
         TaskInfo = json.loads(r.content)["info"]
         obj.lexer.taskInfo = TaskInfo
+        try:
+            obj.shower.text = obj.lexer.get_text()
+        except Exception as e:
+            pass
+
+    def routineTaskCards(self,obj):
+        r = self.InfoC.getCardsInfo()
+        if r is None:
+            obj.lexer.cardsInfo = []
+            obj.shower.text = obj.lexer.get_text()
+            return
+        CardsInfo = json.loads(r.content)["info"]
+        obj.lexer.cardsInfo = CardsInfo
         try:
             obj.shower.text = obj.lexer.get_text()
         except Exception as e:

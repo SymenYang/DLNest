@@ -45,12 +45,18 @@ class ProjectArguments(Arguments):
         self._parser.add_argument("-d",type=str, help="Path to the directory you want to create the project.")
         self._parser.error = raiseError
 
+class CardChangeArguments(Arguments):
+    def __init__(self):
+        super(CardChangeArguments, self).__init__(desc="Arguments for change valid cards.")
+        self._parser.add_argument("-c",type=int, default=[0,1,2,3], nargs='+', help='valid cards')
+
 class CommandCommunicator:
     def __init__(self,url : str):
         self.url = url
         self.taskArgParser = TaskArguments()
         self.projectArgParser = ProjectArguments()
         self.analyzeArgParser = AnalyzeArguments()
+        self.cardChangeArgParser = CardChangeArguments()
         self.app = None
     
     def runTrain(self,commandWordList : list):
@@ -108,7 +114,18 @@ class CommandCommunicator:
             return r
         except Exception:
             return None
-    
+
+    def changeCards(self,commandWordList : list):
+        try:
+            args,otherArgs = self.cardChangeArgParser.parser().parse_known_args(commandWordList[1:])
+            r = requests.post(self.url + "/change_valid_cards",{
+                "cards" : args.c
+            })
+            return r
+        except Exception as e:
+            print(e)
+            return None
+
     def runExp(self,command : str):
         try:
             r = requests.post(self.url + "/run_exp",{
@@ -152,3 +169,5 @@ class CommandCommunicator:
             return self.kill(commandWordList[1])
         elif commandWordList[0] == 'exit':
             self.app.exit()
+        elif commandWordList[0] == 'changeCards':
+            self.changeCards(commandWordList)

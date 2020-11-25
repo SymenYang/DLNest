@@ -17,3 +17,9 @@ class InfoCommunicator:
             return requests.get(self.url + "/analyze_task_info")
         except Exception:
             return None
+
+    def getCardsInfo(self):
+        try:
+            return requests.get(self.url + "/cards_info")
+        except Exception:
+            return None

@@ -160,6 +160,9 @@ def getCommandCompleter():
         "new" : {
             "-d" : PartPathCompleter(),
         },
+        "changeCards" : {
+            "-c" : None
+        },
         "runExp" : None,
         "release" : None,
         "del" : None,

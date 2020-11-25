@@ -40,6 +40,11 @@ class ProjectArguments(Arguments):
 
         self._parser.add_argument("-d",type=str, help="Path to the directory you want to create the project.")
 
+class CardChangeArguments(Arguments):
+    def __init__(self):
+        super(CardChangeArguments, self).__init__(desc="Arguments for change valid cards.")
+        self._parser.add_argument("-c",type=int, default=[0,1,2,3], nargs='+', help='valid cards')
+
 
 class DLNestDEBUG:
     def __init__(self):
@@ -47,6 +52,7 @@ class DLNestDEBUG:
         self.taskArgParser = TaskArguments()
         self.projectArgParser = ProjectArguments()
         self.analyzeArgParser = AnalyzeArguments()
+        self.cardChangeArgParser = CardChangeArguments()
     
     def runTrain(self,commandWordList : list):
         # 获取run命令的参数
@@ -74,6 +80,13 @@ class DLNestDEBUG:
             checkpointID=args.c,
             memoryConsumption=args.m
         )
+
+    def changeCards(self,commandWordList : list):
+        args,otherArgs = self.cardChangeArgParser.parser().parse_known_args(commandWordList[1:])
+        try:
+            self.core.changeCards(args.c)
+        except Exception as e:
+            print(e)
 
     def run(self):
         self.session = PromptSession(auto_suggest=AutoSuggestFromHistory())
@@ -103,6 +116,10 @@ class DLNestDEBUG:
                 print(self.core.getTasks())
             elif commandWordList[0] == 'exit':
                 exit(0)
+            elif commandWordList[0] == 'showCard':
+                print(self.core.getCardsInfo())
+            elif commandWordList[0] == 'changeCards':
+                self.changeCards(commandWordList)
             else:
                 print("Use \'run\' to start a new training process, use \'new\' to create a project.")
 

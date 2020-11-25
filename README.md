@@ -191,18 +191,21 @@ DLNest Analyzer会自动寻找对应名称的py文件，加载其中的experienc
 |del_task           |post|删除任务
 |run_exp            |post|运行测试脚本
 |load_model         |post|加载模型进入Analyzer
+|change_valid_cards |post|修改可用显卡列表
 |release_model      |get |释放Analyzer中的模型
 |DLNest_buffer      |get |得到DLNest的输出
 |analyzer_buffer    |get |得到Analyzer的输出
 |task_info          |get |得到正在运行、等待的任务信息
 |analyze_task_info  |get |得到被Analyzer加载的任务信息
+|cards_info         |get |得到可用显卡的信息
 ### DLNest Shell client
 |命令    |参数 | 描述 |
 |---    |---  |---  |
 |run    |-c -d -f -m -j -mc -ns| 运行训练|
 |del    |task ID | 删除任务|
 |new    |-d | 新建项目 |
-|load   |-r -s -c -m | 加载测试任务 |
+|changeCards |-c | 修改可用显卡列表|
+|load   |-r -s -c -m | 加载测试任务 |
 |release| |释放测试任务 |
 |runExp | script name | 运行测试脚本 |
 |exit   | | 退出|

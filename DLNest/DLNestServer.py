@@ -22,7 +22,9 @@ class DLNestServer:
                 (r'/DLNest_buffer',DLNestBufferHandler,{"core" : self.core}),
                 (r'/analyzer_buffer',AnalyzerBufferHandler,{"core" : self.core}),
                 (r'/task_info',TaskInfoHandler,{"core" : self.core}),
-                (r'/analyze_task_info',AnalyzeTaskInfoHandler,{"core" : self.core})
+                (r'/analyze_task_info',AnalyzeTaskInfoHandler,{"core" : self.core}),
+                (r'/cards_info',CardsInfoHandler,{"core" : self.core}),
+                (r'/change_valid_cards',ChangeValidCardsHandler,{"core" : self.core})
 
             ]
         )
@@ -183,6 +185,28 @@ class AnalyzeTaskInfoHandler(DLNestHandler):
         self.write({
             "info" : info
         })
+
+class CardsInfoHandler(DLNestHandler):
+    def get(self):
+        info = self.core.getCardsInfo()
+        self.write({
+            "info" : info
+        })
+
+class ChangeValidCardsHandler(DLNestHandler):
+    def post(self):
+        try:
+            newCards = self.get_arguments("cards")
+            newCards = [int(item) for item in newCards]
+            self.core.changeCards(newCards)
+            self.write({
+                "status" : "success"
+            })
+        except Exception as e:
+            self.write({
+                "status" : "error",
+                "error" : str(e)
+            })
 
 if __name__ == "__main__":
     server = DLNestServer()

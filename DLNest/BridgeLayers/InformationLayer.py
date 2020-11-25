@@ -171,6 +171,29 @@ class InformationLayer(Singleton):
         if self.cardLock.acquire():
             return self.Cards
     
+    def changeValidCards(self,cards = []):
+        if self.cardLock.acquire():
+            try:
+                newList = []
+                already_valid = []
+                for item in self.Cards:
+                    if item.realID in cards:
+                        newList.append(item)
+                        already_valid.append(item.realID)
+                    else:
+                        if len(item.runningTask) != 0:
+                            raise ValueError("A GPU is running task, cannot be release.")
+                for item in cards:
+                    if item in already_valid:
+                        ...
+                    else:
+                        newList.append(CardInfo(len(newList),item))
+                self.Cards = newList
+            except Exception as e:
+                raise e
+            finally:
+                self.cardLock.release()
+
     def releaseCards(self):
         self.cardLock.release()
 

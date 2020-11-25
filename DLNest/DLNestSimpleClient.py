@@ -39,12 +39,18 @@ class ProjectArguments(Arguments):
 
         self._parser.add_argument("-d",type=str, help="Path to the directory you want to create the project.")
 
+class CardChangeArguments(Arguments):
+    def __init__(self):
+        super(CardChangeArguments, self).__init__(desc="Arguments for change valid cards.")
+        self._parser.add_argument("-c",type=int, default=[0,1,2,3], nargs='+', help='valid cards')
+
 class DLNestSimpleClient:
     def __init__(self,url : str):
         self.url = url
         self.taskArgParser = TaskArguments()
         self.projectArgParser = ProjectArguments()
         self.analyzeArgParser = AnalyzeArguments()
+        self.cardChangeArgParser = CardChangeArguments()
     
     def runTrain(self,commandWordList : list):
         # 获取run命令的参数
@@ -56,7 +62,7 @@ class DLNestSimpleClient:
             "freq_config" : args.f,
             "memory_consumption" : args.m,
             "jump_in_line" : True if args.j == "True" else False,
-            "multi_card" : True if args.mc == "True" else False
+            "multi_card" : True if args.mc == "True" else False,
             "no_save" : True if args.ns == "True" else False
         })
         print(r.content)
@@ -75,6 +81,13 @@ class DLNestSimpleClient:
             "script_path" : args.s,
             "checkpoint_ID" : args.c,
             "memory_consumption" : args.m
+        })
+        print(r.content)
+
+    def changeCards(self,commandWordList : list):
+        args,otherArgs = self.cardChangeArgParser.parser().parse_known_args(commandWordList[1:])
+        r = requests.post(self.url + "/change_valid_cards",{
+            "cards" : args.c
         })
         print(r.content)
 
@@ -101,6 +114,10 @@ class DLNestSimpleClient:
     def showAN(self):
         r = requests.get(self.url + "/analyzer_buffer")
         print(json.loads(r.content)["text"])
+
+    def showCards(self):
+        r = requests.get(self.url + "/cards_info")
+        print(r.content)
 
     def run(self):
         self.session = PromptSession(auto_suggest=AutoSuggestFromHistory())
@@ -129,9 +146,13 @@ class DLNestSimpleClient:
                 pass
             elif commandWordList[0] == 'exit':
                 exit(0)
+            elif commandWordList[0] == 'changeCards':
+                self.changeCards(commandWordList)
+            elif commandWordList[0] == 'showCards':
+                self.showCards()
             else:
                 print("Use \'run\' to start a new training process, use \'new\' to create a project.")
 
 if __name__ == "__main__":
-    main = DLNestSimpleClient("http://127.0.0.1:9999")
+    main = DLNestSimpleClient("http://127.0.0.1:9998")
     main.run()
