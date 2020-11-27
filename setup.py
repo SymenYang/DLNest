@@ -7,12 +7,14 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'nvidia-ml-py>=375.53.1',
+        'nvidia-ml-py3',
         'APScheduler>=3.6.3',
-        'torch>=1.3.0',
+        'torch',
         'prompt-toolkit>=3.0.7'
+        'tornado>=6.0',
     ],
     package_data={
         "DLNest":["FactoryFiles/*"]
-    }
+    },
+    python_requires=">=3.6" 
 )
