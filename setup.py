@@ -10,8 +10,8 @@ setup(
         'nvidia-ml-py3',
         'APScheduler>=3.6.3',
         'torch',
-        'prompt-toolkit>=3.0.7'
-        'tornado>=6.0',
+        'prompt-toolkit>=3.0.7',
+        'tornado>=6.0'
     ],
     package_data={
         "DLNest":["FactoryFiles/*"]
