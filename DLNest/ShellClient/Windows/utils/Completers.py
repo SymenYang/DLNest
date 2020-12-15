@@ -139,7 +139,8 @@ class CommandCompleter(Completer):
                     for c in completer.get_completions(document, complete_event):
                         yield c
                 except Exception as e:
-                    print(e)
+                    ...
+                    #print(e)
 
 def getCommandCompleter():
     commands = {

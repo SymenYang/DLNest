@@ -104,7 +104,7 @@ class TrainTask:
         self.memoryConsumption = memoryConsumption
         self.multiCard = multiCard
         self.timestamp = ""
-        self.GPUID = -1,
+        self.GPUID = -1
         self.status = "Pending"
         self.noSave = noSave
     

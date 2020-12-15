@@ -167,7 +167,8 @@ class AnalyzerBuffer(OutputLayer,io.TextIOWrapper):
         self.appName = "DLNest Analyzer"
 
     def write(self,message : str):
-        self.logMessage(message)
+        if message != '\n':
+            self.logMessage(message)
 
     def flush(self):
         ...
@@ -202,16 +203,22 @@ class AnalyzerBuffer(OutputLayer,io.TextIOWrapper):
         self.putStyledText('message','\n')
 
 class TrainStdout:
-    def __init__(self,fp):
+    def __init__(self,fp,showOnScreen = False,originalStdout = None):
         super(TrainStdout,self).__init__()
         self.stdout = fp
+        self.screenout = originalStdout
+        self.showOnScreen = showOnScreen
     
     def write(self,s):
         ret = self.stdout.write(s)
         self.stdout.flush()
+        if self.showOnScreen:
+            self.screenout.write(s)
         return ret
 
     def flush(self):
+        if self.showOnScreen:
+            self.screenout.flush()
         return self.stdout.flush()
 
     def isatty(self):

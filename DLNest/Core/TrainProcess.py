@@ -17,11 +17,12 @@ except ImportError:
 
 
 class TrainProcess(Process):
-    def __init__(self,task : TrainTask):
+    def __init__(self,task : TrainTask, showOnScreen = False):
         super(TrainProcess, self).__init__()
         self.task = task
         self.DEBUG = True
         self.startEpoch = 0
+        self.showOnScreen = showOnScreen
 
     def __loadAModule(self,filePath : Path,name : str):
         if not filePath.is_absolute():
@@ -144,7 +145,10 @@ class TrainProcess(Process):
         # 重定向输出
         self.outputFile = saveDir / "_output.txt"
         self.outputFP = self.outputFile.open('w')
-        self.outputDelegate = TrainStdout(self.outputFP)
+        if self.showOnScreen:
+            self.outputDelegate = TrainStdout(self.outputFP,True,sys.stdout)
+        else:
+            self.outputDelegate = TrainStdout(self.outputFP)
         sys.stdout = self.outputDelegate
         sys.stderr = self.outputDelegate
 
@@ -238,12 +242,36 @@ class TrainProcess(Process):
             else:
                 break
 
+    def __suspendToDisk(self,epoch,iter):
+        saveDict = self.model.getSaveDict()
+        saveDict["epoch"] = epoch
+        saveDict["iter"] = iter
+        saveFile = self.checkpointsDir / "_suspend.ckpt"
+        saveName = str(saveFile)
+        torch.save(saveDict,saveName)
+        return True
+
+    def __reloadFromDisk(self):
+        ckptFile = self.checkpointsDir / "_suspend.ckpt"
+        try:
+            stateDict = torch.load(str(ckptFile))
+            self.model.loadSaveDict(stateDict)
+            self.startEpoch = stateDict['epoch']
+            return stateDict["epoch"],stateDict["iter"]
+        except Exception as e:
+            print("[Train Process] [Ignored]",e)
+            print("[Train Process] [Ignored]load ckpt " , str(ckptFile) , 'fail, stop')
+            exit(0)
+
     def run(self):
         if isinstance(self.task.GPUID,list):
             ids = [str(item) for item in self.task.GPUID]
             os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(ids)
-        else:
+        elif self.task.GPUID != -1:
             os.environ["CUDA_VISIBLE_DEVICES"] = str(self.task.GPUID)
+        else:
+            print("No card has been specified.")
+            pass
 
         self.__loadLifeCycle()
         self.__initLifeCycle()
