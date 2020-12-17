@@ -165,10 +165,33 @@ class AnalyzerBuffer(OutputLayer,io.TextIOWrapper):
             'message' : '#efefef', 
         }
         self.appName = "DLNest Analyzer"
+        self.isLineHead = True
 
     def write(self,message : str):
-        if message != '\n':
-            self.logMessage(message)
+        if self.isLineHead:
+            self.putStyledText('app',"[" + self.appName + "] ")
+            self.isLineHead = False
+
+        if "\n" in message:
+            if message == '\n':
+                self.putStyledText('message',message)
+                self.isLineHead = True
+            else:
+                lines = message.split("\n")
+                endBy_n = message[-1] == "\n"
+                for i in range(len(lines)):
+                    if self.isLineHead:
+                        self.putStyledText('app',"[" + self.appName + "] ")
+                        self.isLineHead = False
+                    self.putStyledText('message',lines[i])
+                    if i < len(lines) - 1:
+                        self.putStyledText('message',"\n")
+                        self.isLineHead = True
+                    elif endBy_n:
+                        self.putStyledText('message',"\n")
+                        self.isLineHead = True
+        else:
+            self.putStyledText('message',message)
 
     def flush(self):
         ...

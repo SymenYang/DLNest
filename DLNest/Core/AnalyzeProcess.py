@@ -197,7 +197,7 @@ class AnalyzeProcess(Process):
         sys.stderr = self.output
         self.output.appName = "DLNest Analyze Process"
         os.environ["CUDA_VISIBLE_DEVICES"] = str(self.task.GPUID)
-        self.output.logMessage("Runing on GPU: " + str(self.task.GPUID))
+        self.output.logMessage("Running on GPU: " + str(self.task.GPUID))
         try:
             self.__initAll()
             self.outputQueue.put(self.__getMoreOutput(),block=False)

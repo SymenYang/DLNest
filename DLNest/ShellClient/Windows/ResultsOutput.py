@@ -21,6 +21,7 @@ def testTask(self):
 class styledTextLexer(Lexer):
     def __init__(self,styled_text : StyleAndTextTuples = []):
         self.styled_text = styled_text
+        self.DEBUG = False
 
     def __get_styled_lines(self):
         self.styled_text_lines = []
@@ -39,6 +40,14 @@ class styledTextLexer(Lexer):
     def lex_document(self,document : Document) -> Callable[[int], StyleAndTextTuples]:
         self.__get_styled_lines()
         lines = document.lines
+
+        if self.DEBUG:
+            with open("/root/STLexerDEBUG.txt","w") as f:
+                print(self.styled_text,file = f)
+                print(self.styled_text_lines,file=f)
+                print(lines,file = f)
+                print(len(lines),len(self.styled_text_lines),file=f)
+
         def get_line(lineno : int) ->StyleAndTextTuples:
             try:
                 return self.styled_text_lines[lineno]
@@ -134,15 +143,14 @@ class AnalyzerOutput(ResultsOutput):
         if not self.analyzerRoutineTask is None:
             self.scheduler.add_job(self.analyzerRoutineTask,'interval',seconds=analyzerFreq,args=[self])
 
-        self.infoText = FormattedTextControl(
-                    [("","No analyzer task is running")],
+        self.infoText = FormattedTextControl( 
+                    [("",   "           No analyze task is running           ")],
                     focusable=False,
                     show_cursor=False
                 )
         
         self.infoWindow = Window(
-                content=self.infoText,
-                width=27
+                content=self.infoText
             )
 
         self.infoLabel = Box(
@@ -150,8 +158,8 @@ class AnalyzerOutput(ResultsOutput):
             height=3,
             padding_top=1,
             padding_bottom=1,
-            padding_left=3,
-            padding_right=3,
+#            padding_left=3,
+#            padding_right=3,
             style="class:analyzer_info_label"
         )
 

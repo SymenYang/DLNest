@@ -14,6 +14,7 @@ from .Communicators.Info import InfoCommunicator
 import json
 from pathlib import Path
 import argparse
+import os
 
 class Client:
     def __init__(self,url : str):
@@ -28,10 +29,17 @@ class Client:
         self.TaskInfo = TaskInfoShower(routineTask = self.routineTaskDLInfo,title = "Tasks (F4)")
         self.CardsInfo = CardsInfoShower(routineTask = self.routineTaskCards,title = "Cards (F5)")
         self.w1,self.w2,self.w3,self.w4,self.w5 = self.CMDIN.getWindow(),self.DLOutput.getWindow(),self.ANOutput.getWindow(),self.TaskInfo.getWindow(),self.CardsInfo.getWindow()
-        self.container = HSplit([
+        self.container_fat = HSplit([
             self.w1,
             VSplit([self.w2,self.w3]),
             VSplit([self.w4,self.w5])
+        ])
+        self.container_tall = HSplit([
+            self.w1,
+            self.w2,
+            self.w3,
+            self.w4,
+            self.w5
         ])
 
         self.kb = KeyBindings()
@@ -87,9 +95,23 @@ class Client:
             "cards_tasks" :  "bg:#c71585"
         })
 
-        self.layout = Layout(self.container,focused_element=self.w1)
+        self.layout = Layout(self.container_fat,focused_element=self.w1)
         self.app = Application(key_bindings=self.kb, layout=self.layout, full_screen=True,style=self.style)
         self.CC.app = self.app
+        self.app._on_resize = self.on_resize
+
+    def on_resize(self):
+        cols, rows = os.get_terminal_size(0)
+        focused_element = self.layout.current_window
+        if cols >= 2 * rows: # fat
+            self.app.layout = Layout(self.container_fat,focused_element=focused_element)
+        else: # tall
+            self.app.layout = Layout(self.container_tall,focused_element=focused_element)
+        
+        self.app.renderer.erase(leave_alternate_screen=False)
+        self.app._request_absolute_cursor_position()
+        self.app._redraw()
+        
 
     def getApp(self):
         return self.app

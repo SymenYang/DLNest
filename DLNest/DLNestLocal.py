@@ -107,7 +107,6 @@ class DLNestDEBUG:
                 self.core.releaseModel()
             elif commandWordList[0] == 'del':
                 self.core.delTask(commandWordList[1])
-            #     #self.analyze(commandWordList)
             elif commandWordList[0] == 'showDL':
                 print(self.core.getDLNestOutput()[1])
             elif commandWordList[0] == 'showAN':
@@ -115,6 +114,7 @@ class DLNestDEBUG:
             elif commandWordList[0] == 'show':
                 print(self.core.getTasks())
             elif commandWordList[0] == 'exit':
+                self.core.releaseModel()
                 exit(0)
             elif commandWordList[0] == 'showCard':
                 print(self.core.getCardsInfo())
