@@ -29,7 +29,7 @@ class AnalyzeArguments(Arguments):
         super(AnalyzeArguments, self).__init__(desc="Arguments for an Analyzer")
 
         self._parser.add_argument("-r",type=str, help = "path to the model record directory.")
-        self._parser.add_argument("-s",type=str, help = "path to the analyze scripts.")
+        self._parser.add_argument("-s",type=str, default="", help = "path to the analyze scripts.")
         self._parser.add_argument("-c",type=int, help = "which epoch you want the model to load.(int)")
         self._parser.add_argument("-m",type=int, default = -1, help="predicted GPU memory consumption for this task in MB.(default: 90\% of the total memory)")
 
@@ -119,6 +119,15 @@ class DLNestSimpleClient:
         r = requests.get(self.url + "/cards_info")
         print(r.content)
 
+    def changeTimeDelay(self,delay):
+        try:
+            r = requests.post(self.url + "/change_time_delay",{
+                "delay" : int(delay)
+            })
+            print(r.content)
+        except Exception as e:
+            print(e)
+
     def run(self):
         self.session = PromptSession(auto_suggest=AutoSuggestFromHistory())
         while True:
@@ -150,9 +159,17 @@ class DLNestSimpleClient:
                 self.changeCards(commandWordList)
             elif commandWordList[0] == 'showCards':
                 self.showCards()
+            elif commandWordList[0] == "changeDelay":
+                self.changeTimeDelay(commandWordList[1])
             else:
                 print("Use \'run\' to start a new training process, use \'new\' to create a project.")
 
 if __name__ == "__main__":
-    main = DLNestSimpleClient("http://127.0.0.1:9998")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-u",type=str, default="http://127.0.0.1:9998",help="DLNest server address")
+    args=parser.parse_args()
+    url = args.u
+    if url[:7] != "http://":
+        url = "http://" + url
+    main = DLNestSimpleClient(url)
     main.run()

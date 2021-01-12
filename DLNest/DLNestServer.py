@@ -24,7 +24,8 @@ class DLNestServer:
                 (r'/task_info',TaskInfoHandler,{"core" : self.core}),
                 (r'/analyze_task_info',AnalyzeTaskInfoHandler,{"core" : self.core}),
                 (r'/cards_info',CardsInfoHandler,{"core" : self.core}),
-                (r'/change_valid_cards',ChangeValidCardsHandler,{"core" : self.core})
+                (r'/change_valid_cards',ChangeValidCardsHandler,{"core" : self.core}),
+                (r'/change_time_delay',ChangeTimeDelayHandler,{"core" : self.core})
 
             ]
         )
@@ -199,6 +200,20 @@ class ChangeValidCardsHandler(DLNestHandler):
             newCards = self.get_arguments("cards")
             newCards = [int(item) for item in newCards]
             self.core.changeCards(newCards)
+            self.write({
+                "status" : "success"
+            })
+        except Exception as e:
+            self.write({
+                "status" : "error",
+                "error" : str(e)
+            })
+
+class ChangeTimeDelayHandler(DLNestHandler):
+    def post(self):
+        try: 
+            newDelay = self.get_argument("delay")
+            self.core.changeTimeDelay(int(newDelay))
             self.write({
                 "status" : "success"
             })

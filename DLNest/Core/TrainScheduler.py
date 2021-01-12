@@ -31,7 +31,7 @@ class TrainScheduler:
         self.lastTime = 0
 
         self.output = DLNestBuffer()
-    
+
     def __canTaskRunOnCard(self,task : TrainTask, card : CardInfo):
 
         # 判断卡是否损坏
@@ -253,9 +253,14 @@ class TrainScheduler:
             self.information.releaseTasks()
             self.information.releaseCards()
 
+    def changeTimeDelay(self,delay):
+        self.timeDelay = delay
+        self.scheduler.remove_job(self.schedulerJob.id)
+        self.schedulerJob = self.scheduler.add_job(self.__routineRunTask,'interval',seconds = self.timeDelay)
+
     def startRoutineTask(self):
         self.scheduler = BackgroundScheduler()
-        self.scheduler.add_job(self.__routineRunTask,'interval',seconds = self.timeDelay)
+        self.schedulerJob = self.scheduler.add_job(self.__routineRunTask,'interval',seconds = self.timeDelay)
         self.scheduler.start()
 
 if __name__ == "__main__":

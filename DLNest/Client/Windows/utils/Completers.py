@@ -164,6 +164,7 @@ def getCommandCompleter():
         "changeCards" : {
             "-c" : None
         },
+        "changeDelay" : None,
         "runExp" : None,
         "release" : None,
         "del" : None,

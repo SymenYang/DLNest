@@ -32,7 +32,7 @@ class AnalyzeArguments(Arguments):
         super(AnalyzeArguments, self).__init__(desc="Arguments for an Analyzer")
 
         self._parser.add_argument("-r",type=str, help = "path to the model record directory.")
-        self._parser.add_argument("-s",type=str, help = "path to the analyze scripts.")
+        self._parser.add_argument("-s",type=str, default = "", help = "path to the analyze scripts.")
         self._parser.add_argument("-c",type=int, help = "which epoch you want the model to load.(int)")
         self._parser.add_argument("-m",type=int, default = -1, help="predicted GPU memory consumption for this task in MB.(default: 90\% of the total memory)")
 
@@ -123,7 +123,16 @@ class CommandCommunicator:
             })
             return r
         except Exception as e:
-            print(e)
+            return None
+
+    def changeDelay(self,commandWordList : list):
+        try:
+            delay = commandWordList[1]
+            r = requests.post(self.url + "/change_time_delay",{
+                "delay" : int(delay)
+            })
+            return r
+        except Exception as e:
             return None
 
     def runExp(self,command : str):
@@ -171,3 +180,5 @@ class CommandCommunicator:
             self.app.exit()
         elif commandWordList[0] == 'changeCards':
             self.changeCards(commandWordList)
+        elif commandWordList[0] == 'changeDelay':
+            self.changeDelay(commandWordList)

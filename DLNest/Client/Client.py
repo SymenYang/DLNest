@@ -209,7 +209,7 @@ class Client:
         except Exception as e:
             pass
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-u",type=str, default="http://127.0.0.1:9999",help="DLNest server address")
     args=parser.parse_args()
@@ -221,3 +221,6 @@ if __name__ == "__main__":
         client.getApp().run()
     except Exception as e:
         print(e)
+
+if __name__ == "__main__":
+    main()

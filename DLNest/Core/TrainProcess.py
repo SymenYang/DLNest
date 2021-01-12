@@ -82,8 +82,8 @@ class TrainProcess(Process):
                         self.model.loadSaveDict(stateDict)
                         self.startEpoch = stateDict['epoch']
                 except Exception as e:
-                    print("[Train Process] [Ignored]",e)
-                    print('[Train Process] [Ignored]load ckpt ' , str(self.task.args['ckpt_load']) , 'fail, stop')
+                    print("[Train Process] [ERROR]",e)
+                    print('[Train Process] [ERROR]load ckpt ' , str(self.task.args['ckpt_load']) , 'fail, stop')
                     exit(0)
         else:
             raise Exception("Cannot find model class")
@@ -244,6 +244,7 @@ class TrainProcess(Process):
 
     def __suspendToDisk(self,epoch,iter):
         saveDict = self.model.getSaveDict()
+        self.model = None
         saveDict["epoch"] = epoch
         saveDict["iter"] = iter
         saveFile = self.checkpointsDir / "_suspend.ckpt"
@@ -254,13 +255,14 @@ class TrainProcess(Process):
     def __reloadFromDisk(self):
         ckptFile = self.checkpointsDir / "_suspend.ckpt"
         try:
+            self.__initModel()
             stateDict = torch.load(str(ckptFile))
             self.model.loadSaveDict(stateDict)
             self.startEpoch = stateDict['epoch']
             return stateDict["epoch"],stateDict["iter"]
         except Exception as e:
-            print("[Train Process] [Ignored]",e)
-            print("[Train Process] [Ignored]load ckpt " , str(ckptFile) , 'fail, stop')
+            print("[Train Process] [ERROR]",e)
+            print("[Train Process] [ERROR]load ckpt " , str(ckptFile) , 'fail, stop')
             exit(0)
 
     def run(self):

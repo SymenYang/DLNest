@@ -173,6 +173,9 @@ class AnalyzeProcess(Process):
         offset,styledText = self.output.getStyledText(self.bufferPos,-1)
         if styledText is None:
             self.bufferPos = offset
+            offset,styledText = self.output.getStyledText(self.bufferPos,-1) # 第一次读取如果已经超限，则按照新的offset再读取一次，若还不行就返回空
+            if styledText is None:
+                self.bufferPos = offset
         else:
             self.bufferPos += len(styledText)
         return styledText
@@ -193,6 +196,7 @@ class AnalyzeProcess(Process):
                 self.output.logIgnError(str(e))
 
     def run(self):
+        self.debugf = sys.stdout # debug使可以用这个在server里输出
         sys.stdout = self.output
         sys.stderr = self.output
         self.output.appName = "DLNest Analyze Process"

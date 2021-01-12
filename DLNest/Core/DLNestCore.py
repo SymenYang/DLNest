@@ -233,6 +233,9 @@ class DLNestCore:
         checkpointID : int,
         memoryConsumption : float = -1):
         try:
+            if scriptPath is None or scriptPath == "":
+                scriptPath = Path(recordPath).parent.parent / "AnalyzeScripts"
+                scriptPath = str(scriptPath)
             analyzeTask = AnalyzeTask(
                 recordPath = recordPath,
                 scriptPath = scriptPath,
@@ -297,3 +300,10 @@ class DLNestCore:
         except Exception as e:
             self.DLNestBuffer.logError(str(e))
             self.DLNestBuffer.logError("Failed to change valid cards")
+    
+    def changeTimeDelay(self,delay : int):
+        try:
+            self.trainScheduler.changeTimeDelay(delay)
+        except Exception as e:
+            self.DLNestBuffer.logError(str(e))
+            self.DLNestBuffer.logError("Failed to change time delay")
