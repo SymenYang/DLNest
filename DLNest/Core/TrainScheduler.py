@@ -4,6 +4,7 @@ import threading
 import random
 from pathlib import Path
 from apscheduler.schedulers.background import BackgroundScheduler
+from multiprocessing import Queue
 import sys
 try:
     from DLNest.BridgeLayers.OutputLayers import TrainStdout,DLNestBuffer
@@ -109,7 +110,9 @@ class TrainScheduler:
         # 赋予显卡
         task.GPUID = card.realID
         # 启动训练进程
-        taskProcess = TrainProcess(task)
+        commandQueue = Queue()
+        taskProcess = TrainProcess(task,commandQueue=commandQueue)
+        task.commandQueue = commandQueue
         task.status = "Running"
         taskProcess.start()
         # 向卡中添加该任务的记录
@@ -131,7 +134,9 @@ class TrainScheduler:
         # 赋予显卡
         task.GPUID = cardIDs
         # 启动训练进程
-        taskProcess = TrainProcess(task)
+        commandQueue = Queue()
+        taskProcess = TrainProcess(task,commandQueue=commandQueue)
+        task.commandQueue = commandQueue
         task.status = "Running"
         taskProcess.start()
         # 向卡中添加该任务的记录

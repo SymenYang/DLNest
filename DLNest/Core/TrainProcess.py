@@ -7,6 +7,8 @@ import shutil
 import json
 import torch
 from pathlib import Path
+from multiprocessing import Process,Pipe,connection,Queue
+import gc
 
 try:
     from DLNest.BridgeLayers.InformationLayer import TrainTask
@@ -17,12 +19,13 @@ except ImportError:
 
 
 class TrainProcess(Process):
-    def __init__(self,task : TrainTask, showOnScreen = False):
+    def __init__(self,task : TrainTask, showOnScreen = False, commandQueue : Queue = None ):
         super(TrainProcess, self).__init__()
         self.task = task
         self.DEBUG = True
         self.startEpoch = 0
         self.showOnScreen = showOnScreen
+        self.commandQueue = commandQueue
 
     def __loadAModule(self,filePath : Path,name : str):
         if not filePath.is_absolute():
@@ -81,6 +84,7 @@ class TrainProcess(Process):
                         stateDict = torch.load(self.task.args['ckpt_load'])
                         self.model.loadSaveDict(stateDict)
                         self.startEpoch = stateDict['epoch']
+                        self.logDict = stateDict['log_dict']
                 except Exception as e:
                     print("[Train Process] [ERROR]",e)
                     print('[Train Process] [ERROR]load ckpt ' , str(self.task.args['ckpt_load']) , 'fail, stop')
@@ -168,6 +172,7 @@ class TrainProcess(Process):
         # save this epoch
         saveDict = self.model.getSaveDict()
         saveDict['epoch'] = epoch
+        saveDict['log_dict'] = self.logDict
         saveFile = self.checkpointsDir / ("epoch_" + str(epoch) + ".ckpt")
         saveName = str(saveFile)
         torch.save(saveDict,saveName)
@@ -204,11 +209,36 @@ class TrainProcess(Process):
         if self.DEBUG:
             print("[Train Process] Saved model")
 
+    def __dealCommand(self,command,epoch,iter_now):
+        if command == None:
+            return
+        elif command == "Suspend":
+            self.lifeCycle.BSuspend()
+            self.__suspendToDisk(epoch,iter_now)
+            self.lifeCycle.ASuspend()
+            command = self.commandQueue.get(True)
+            self.__dealCommand(command,epoch,iter_now)
+        elif command == "LoadFromSuspend":
+            self.lifeCycle.BLoadFromSuspend()
+            self.__reloadFromDisk()
+            self.lifeCycle.ALoadFromSuspend()
+            return
+
     def __train(self):
         nowEpoch = self.startEpoch
         while True:
             self.lifeCycle.BOneEpoch()
             for _iter,data in enumerate(self.trainLoader):
+                # get command
+                self.lifeCycle.BGetCommand()
+                command = None
+                try:
+                    command = self.commandQueue.get(False)
+                except Exception as e:
+                    ... # no command
+                self.lifeCycle.AGetCommand()
+                self.__dealCommand(command,nowEpoch,_iter)
+                
                 # run one step
                 self.lifeCycle.BModelOneStep()
                 self.model.runOneStep(data,self.logDict,_iter,nowEpoch)
@@ -242,14 +272,22 @@ class TrainProcess(Process):
             else:
                 break
 
-    def __suspendToDisk(self,epoch,iter):
-        saveDict = self.model.getSaveDict()
-        self.model = None
+    def __suspendToDisk(self,epoch,iter_now):
+        saveDict = self.model.getSaveDict().copy()
         saveDict["epoch"] = epoch
-        saveDict["iter"] = iter
+        saveDict["iter"] = iter_now
         saveFile = self.checkpointsDir / "_suspend.ckpt"
         saveName = str(saveFile)
+
+        # del model
+        self.lifeCycle.model = None
+        self.logDict = None
+        self.model = None
         torch.save(saveDict,saveName)
+        gc.collect()
+
+        # gc gpu memory
+        torch.cuda.empty_cache()
         return True
 
     def __reloadFromDisk(self):
@@ -257,8 +295,10 @@ class TrainProcess(Process):
         try:
             self.__initModel()
             stateDict = torch.load(str(ckptFile))
+            self.lifeCycle.model = self.model
             self.model.loadSaveDict(stateDict)
             self.startEpoch = stateDict['epoch']
+            #self.model.cuda()
             return stateDict["epoch"],stateDict["iter"]
         except Exception as e:
             print("[Train Process] [ERROR]",e)

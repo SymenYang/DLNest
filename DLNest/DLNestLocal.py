@@ -107,6 +107,10 @@ class DLNestDEBUG:
                 self.core.releaseModel()
             elif commandWordList[0] == 'del':
                 self.core.delTask(commandWordList[1])
+            elif commandWordList[0] == 'suspend':
+                self.core.susTask(commandWordList[1])
+            elif commandWordList[0] == 'reload':
+                self.core.reloadTask(commandWordList[1])
             elif commandWordList[0] == 'showDL':
                 print(self.core.getDLNestOutput()[1])
             elif commandWordList[0] == 'showAN':

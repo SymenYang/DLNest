@@ -42,6 +42,24 @@ class LifeCycleBase():
     def AOneEpoch(self):
         pass
 
+    def BGetCommand(self):
+        pass
+
+    def AGetCommand(self):
+        pass
+
+    def BSuspend(self):
+        pass
+
+    def ASuspend(self):
+        pass
+
+    def BLoadFromSuspend(self):
+        pass
+
+    def ALoadFromSuspend(self):
+        pass
+
     def BModelOneStep(self):
         pass
 

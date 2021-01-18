@@ -107,7 +107,8 @@ class TrainTask:
         self.GPUID = -1
         self.status = "Pending"
         self.noSave = noSave
-    
+        self.commandQueue = None
+
     def getDict(self):
         return {
             "ID" : self.ID,
@@ -226,7 +227,27 @@ class InformationLayer(Singleton):
             finally:
                 self.taskLock.release()
         return ret
-    
+
+    def getTaskByID(self,ID : str):
+        if self.cardLock.acquire():
+            try:
+                for card in self.Cards:
+                    card.checkTasks()
+                    for task in card.runningTask:
+                        id = task[2].ID # task[2] is a TrainTask class
+                        if id == ID:
+                            return task # (TrainProcess, start time, TrainTask)
+            finally:
+                self.cardLock.release()
+        if self.taskLock.acquire():
+            try:
+                for task in self.pendingTasks:
+                    if task.ID == ID:
+                        return None,None,task # (TrainProcess(None), start time(None), TrainTask)
+            finally:
+                self.taskLock.release()
+        return None # Not found
+
     def usingTasks(self):
         """
         占用所有正在运行、排队的任务的信息。使用之后需要调用releaseTasks

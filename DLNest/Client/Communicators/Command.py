@@ -160,6 +160,24 @@ class CommandCommunicator:
         except Exception:
             return None
 
+    def suspend(self,taskID : str):
+        try:
+            r = requests.post(self.url + "/sus_task",{
+                "task_ID" : taskID
+            })
+            return r
+        except Exception:
+            return None
+
+    def reload(self,taskID : str):
+        try:
+            r = requests.post(self.url + "/reload_task",{
+                "task_ID" : taskID
+            })
+            return r
+        except Exception:
+            return None
+
     def giveACommand(self,command : str):
         commandWordList = command.strip().split(' ')
         if commandWordList[0] == 'run':
@@ -176,6 +194,10 @@ class CommandCommunicator:
             return self.release()
         elif commandWordList[0] == 'del':
             return self.kill(commandWordList[1])
+        elif commandWordList[0] == 'suspend':
+            self.suspend(commandWordList[1])
+        elif commandWordList[0] == 'reload':
+            self.reload(commandWordList[1])
         elif commandWordList[0] == 'exit':
             self.app.exit()
         elif commandWordList[0] == 'changeCards':

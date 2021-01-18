@@ -16,6 +16,8 @@ class DLNestServer:
                 (r'/new_proj',NewProjectHandler,{"core" : self.core}),
                 (r'/run_train',RunTrainHandler,{"core" : self.core}),
                 (r'/del_task',DelTaskHandler,{"core" : self.core}),
+                (r'/sus_task',SusTaskHandler,{"core" : self.core}),
+                (r'/reload_task',ReloadTaskHandler,{"core" : self.core}),
                 (r'/run_exp',RunExpHandler,{"core" : self.core}),
                 (r'/load_model',LoadModelHandler,{"core" : self.core}),
                 (r'/release_model',ReleaseModelHandler,{"core" : self.core}),
@@ -26,7 +28,6 @@ class DLNestServer:
                 (r'/cards_info',CardsInfoHandler,{"core" : self.core}),
                 (r'/change_valid_cards',ChangeValidCardsHandler,{"core" : self.core}),
                 (r'/change_time_delay',ChangeTimeDelayHandler,{"core" : self.core})
-
             ]
         )
         self.app.listen(tornado.options.options.port)
@@ -95,6 +96,38 @@ class DelTaskHandler(DLNestHandler):
                 "status" : "success"
             })
             print("Del Task", taskID)
+        except Exception as e:
+            print(e)
+            self.write({
+                "status" : "error",
+                "error" : "No task_ID is given."
+            })
+
+class SusTaskHandler(DLNestHandler):
+    def post(self):
+        try:
+            taskID = self.get_argument("task_ID")
+            self.core.susTask(taskID)
+            self.write({
+                "status" : "success"
+            })
+            print("Suspend Task", taskID)
+        except Exception as e:
+            print(e)
+            self.write({
+                "status" : "error",
+                "error" : "No task_ID is given."
+            })
+
+class ReloadTaskHandler(DLNestHandler):
+    def post(self):
+        try:
+            taskID = self.get_argument("task_ID")
+            self.core.reloadTask(taskID)
+            self.write({
+                "status" : "success"
+            })
+            print("Reload Task", taskID)
         except Exception as e:
             print(e)
             self.write({

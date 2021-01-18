@@ -168,6 +168,8 @@ def getCommandCompleter():
         "runExp" : None,
         "release" : None,
         "del" : None,
-        "exit" : None
+        "exit" : None,
+        "suspend" : None,
+        "reload" : None
     }
     return CommandCompleter(commands)

@@ -107,6 +107,18 @@ class DLNestSimpleClient:
         })
         print(r.content)
 
+    def suspend(self,taskID : str):
+        r = requests.post(self.url + "/sus_task",{
+            "task_ID" : taskID
+        })
+        print(r.content)
+
+    def reload(self,taskID : str):
+        r = requests.post(self.url + "/reload_task",{
+            "task_ID" : taskID
+        })
+        print(r.content)
+
     def showDL(self):
         r = requests.get(self.url + "/DLNest_buffer")
         print(json.loads(r.content)["text"])
@@ -114,6 +126,10 @@ class DLNestSimpleClient:
     def showAN(self):
         r = requests.get(self.url + "/analyzer_buffer")
         print(json.loads(r.content)["text"])
+
+    def taskInfo(self):
+        r = requests.get(self.url + "/task_info")
+        print(json.loads(r.content)["info"])
 
     def showCards(self):
         r = requests.get(self.url + "/cards_info")
@@ -147,12 +163,16 @@ class DLNestSimpleClient:
                 self.release()
             elif commandWordList[0] == 'del':
                 self.kill(commandWordList[1])
+            elif commandWordList[0] == 'suspend':
+                self.suspend(commandWordList[1])
+            elif commandWordList[0] == 'reload':
+                self.reload(commandWordList[1])
             elif commandWordList[0] == 'showDL':
                 self.showDL()
             elif commandWordList[0] == 'showAN':
                 self.showAN()
             elif commandWordList[0] == 'show':
-                pass
+                self.taskInfo()
             elif commandWordList[0] == 'exit':
                 exit(0)
             elif commandWordList[0] == 'changeCards':

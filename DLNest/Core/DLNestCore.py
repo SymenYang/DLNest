@@ -227,6 +227,41 @@ class DLNestCore:
             self.DLNestBuffer.logIgnError(str(e),app="Del Task")
             return
 
+    def susTask(self,taskID : str):
+        try:
+            task = self.information.getTaskByID(taskID)
+            
+            if task is None or task[0] is None:
+                self.DLNestBuffer.logError("Wrong task ID to suspend.",app="Sus Task")
+                return
+            
+            process,taskInfo = task[0],task[2]
+            queue = taskInfo.commandQueue
+            queue.put("Suspend",block = False)
+            taskInfo.status = "Suspend"
+            self.DLNestBuffer.logMessage("Suspended task " + taskID, app = "Sus Task")
+        except Exception as e:
+            self.DLNestBuffer.logIgnError(str(e),app="Sus Task")
+            return
+    
+    def reloadTask(self,taskID : str):
+        try:
+            task = self.information.getTaskByID(taskID)
+
+            if task is None or task[0] is None:
+                self.DLNestBuffer.logError("Wrong task ID to suspend.",app="Reload Task")
+                return
+            
+            process, taskInfo = task[0],task[2]
+            queue = taskInfo.commandQueue
+            queue.put("LoadFromSuspend",block = False)
+            taskInfo.status = "Running"
+            self.DLNestBuffer.logMessage("Reloaded task " + taskID, app = "Reload Task")
+        except Exception as e:
+            self.DLNestBuffer.logIgnError(str(e),app="Sus Task")
+            return
+
+
     def loadModel(self,
         recordPath : str,
         scriptPath : str,

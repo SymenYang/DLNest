@@ -189,6 +189,8 @@ DLNest Analyzer会自动寻找对应名称的py文件，加载其中的experienc
 |new_proj           |post|新建项目
 |run_train          |post|进行训练
 |del_task           |post|删除任务
+|sus_task           |post|挂起任务
+|reload_task        |post|恢复任务
 |run_exp            |post|运行测试脚本
 |load_model         |post|加载模型进入Analyzer
 |change_valid_cards |post|修改可用显卡列表
@@ -204,6 +206,8 @@ DLNest Analyzer会自动寻找对应名称的py文件，加载其中的experienc
 |---    |---  |---  |
 |run    |-c -d -f -m -j -mc -ns| 运行训练|
 |del    |task ID | 删除任务|
+|suspend|task ID | 挂起任务|
+|reload |task ID | 恢复任务|  
 |new    |-d | 新建项目 |
 |changeCards |-c | 修改可用显卡列表|
 |changeDelay |delay时间｜修改同一张卡两次任务的时间间隔(s)
@@ -218,5 +222,5 @@ DLNest Analyzer会自动寻找对应名称的py文件，加载其中的experienc
 - [x] 多卡支持
 - [ ] 单元测试覆盖
 - [x] 修改等待时间
-- [ ] 挂起任务
+- [x] 挂起任务
 - [x] 单独运行脚本

@@ -27,6 +27,8 @@ class taskLexer(Lexer):
                 style_base = "class:pending_task"
                 if task["status"] == "Running":
                     style_base = "class:running_task"
+                elif task["status"] == "Suspend":
+                    style_base = "class:suspend_task"
                 ID = task["ID"]
                 GPU = str(task["GPU_ID"]) if task["GPU_ID"] != [-1] else " "
                 description = task["description"]
