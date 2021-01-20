@@ -261,7 +261,6 @@ class DLNestCore:
             self.DLNestBuffer.logIgnError(str(e),app="Sus Task")
             return
 
-
     def loadModel(self,
         recordPath : str,
         scriptPath : str,
