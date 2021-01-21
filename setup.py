@@ -14,7 +14,11 @@ setup(
         'tornado>=6.0'
     ],
     package_data={
-        "DLNest":["FactoryFiles/*","DLNest_config.json"]
+        "DLNest":[
+            "FactoryFiles/*",
+            "FactoryFiles/*/*"
+           ,"DLNest_config.json"
+        ]
     },
     python_requires=">=3.6" 
 )
