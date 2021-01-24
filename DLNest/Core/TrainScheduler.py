@@ -141,7 +141,7 @@ class TrainScheduler:
         taskProcess.start()
         # 向卡中添加该任务的记录
         for card in cards:
-            card.addATask(taskProcess)
+            card.addATask(taskProcess,task)
     
     def giveATask(self,task : TrainTask, jumpInLine : bool = False):
         """
