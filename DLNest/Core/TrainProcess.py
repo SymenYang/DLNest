@@ -83,7 +83,7 @@ class TrainProcess(Process):
                     if ckpt_file.is_file():
                         stateDict = torch.load(self.task.args['ckpt_load'])
                         self.model.loadSaveDict(stateDict)
-                        self.startEpoch = stateDict['epoch']
+                        self.startEpoch = stateDict['epoch'] + 1
                         self.logDict = stateDict['log_dict']
                 except Exception as e:
                     print("[Train Process] [ERROR]",e)
@@ -236,7 +236,7 @@ class TrainProcess(Process):
                     command = self.commandQueue.get(False)
                 except Exception as e:
                     ... # no command
-                self.lifeCycle.AGetCommand()
+                self.lifeCycle.AGetCommand(command)
                 self.__dealCommand(command,nowEpoch,_iter)
                 
                 # run one step
@@ -247,7 +247,7 @@ class TrainProcess(Process):
                 # visualize
                 if self.lifeCycle.needVisualize(nowEpoch,_iter,self.logDict,self.task.args):
                     self.lifeCycle.BVisualize()
-                    self.model.visualize()
+                    self.model.visualize(epoch = nowEpoch, iter = _iter, log = self.logDict)
                     self.lifeCycle.AVisualize()
 
             # output in command Line    

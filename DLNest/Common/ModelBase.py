@@ -14,7 +14,7 @@ class ModelBase():
     def runOneStep(self,data,log : dict,iter : int,epoch : int):
         pass
 
-    def visualize(self):
+    def visualize(self, log : dict, iter : int, epoch : int):
         pass
 
     def validate(self,valLoader,log : dict):
