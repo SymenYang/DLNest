@@ -92,7 +92,8 @@ class TrainTask:
         description : str = "",
         memoryConsumption : float = -1,
         multiCard : bool = False,
-        noSave : bool = False
+        noSave : bool = False,
+        DDP : bool = False
         ):
         self.ID = "train_" + ("%.4f" % time.time())[6:] + "_" + str(random.randint(0,9))
         self.modelFilePath = Path(args["model_file_path"])
@@ -108,6 +109,9 @@ class TrainTask:
         self.status = "Pending"
         self.noSave = noSave
         self.commandQueue = None
+        self.DDP = DDP
+        if self.DDP:
+            self.multiCard = True
 
     def getDict(self):
         return {

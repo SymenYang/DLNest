@@ -121,7 +121,8 @@ class DLNestCore:
         memoryConsumption : int = -1,
         jumpInLine : bool = False,
         multiCard : bool = False,
-        noSave : bool = False
+        noSave : bool = False,
+        DDP : bool = False
     ):
         try:
             taskArgsPath = Path(rootConfig)
@@ -147,7 +148,8 @@ class DLNestCore:
                 description=description,
                 memoryConsumption=memoryConsumption,
                 multiCard=multiCard,
-                noSave=noSave
+                noSave=noSave,
+                DDP=DDP
             )
 
             # 运行Task

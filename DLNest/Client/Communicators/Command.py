@@ -24,6 +24,7 @@ class TaskArguments(Arguments):
         self._parser.add_argument("-j",action='store_true', help="True for jump in line.(default: False)")
         self._parser.add_argument("-mc",action='store_true', help="True to use multi card if single card can't handle")
         self._parser.add_argument("-ns",action='store_true', help="True to save to the NOSAVE dir")
+        self._parser.add_argument("-DDP",action='store_true', help="True to use DDP")
 
         self._parser.error = raiseError
 
@@ -86,7 +87,8 @@ class CommandCommunicator:
                 "memory_consumption" : args.m,
                 "jump_in_line" : args.j,
                 "multi_card" : args.mc,
-                "no_save" : args.ns
+                "no_save" : args.ns,
+                "DDP" : args.DDP
             })
             return r
         except Exception:

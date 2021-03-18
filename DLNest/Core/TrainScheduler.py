@@ -10,11 +10,13 @@ try:
     from DLNest.BridgeLayers.OutputLayers import TrainStdout,DLNestBuffer
     from DLNest.BridgeLayers.InformationLayer import InformationLayer,CardInfo,TrainTask
     from DLNest.Core.TrainProcess import TrainProcess
+    from DLNest.Core.DDPTrainProcess import DDPTrainProcess
 except ImportError:
     sys.path.append("..")
     from BridgeLayers.OutputLayers import TrainStdout,DLNestBuffer
     from BridgeLayers.InformationLayer import InformationLayer,CardInfo,TrainTask
     from .TrainProcess import TrainProcess
+    from .DDPTrainProcess import DDPTrainProcess
 
 class TrainScheduler:
     def __init__(self,cards = [-1], timeDelay : int = 60, maxTaskPerCard = -1):
@@ -32,6 +34,7 @@ class TrainScheduler:
         self.lastTime = 0
 
         self.output = DLNestBuffer()
+        self.DDPCount = 0
 
     def __canTaskRunOnCard(self,task : TrainTask, card : CardInfo):
 
@@ -135,7 +138,11 @@ class TrainScheduler:
         task.GPUID = cardIDs
         # 启动训练进程
         commandQueue = Queue()
-        taskProcess = TrainProcess(task,commandQueue=commandQueue)
+        if task.DDP:
+            taskProcess = DDPTrainProcess(task,commandQueue=commandQueue, Port = str(16484 + self.DDPCount))
+            self.DDPCount = (self.DDPCount + 1) % 1000
+        else:
+            taskProcess = TrainProcess(task,commandQueue=commandQueue)
         task.commandQueue = commandQueue
         task.status = "Running"
         taskProcess.start()

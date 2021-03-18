@@ -52,6 +52,7 @@ class TrainProcess(Process):
     def __loadOthers(self):
         self.modelModule = self.__loadAModule(self.task.modelFilePath,"Model")
         self.datasetModule = self.__loadAModule(self.task.datasetFilePath,"Dataset")
+        sys.modules["Dataset"] = self.datasetModule
 
     def __initLifeCycle(self):
         lifeCycleName = self.task.args['life_cycle_name']
@@ -213,57 +214,57 @@ class TrainProcess(Process):
         if command == None:
             return
         elif command == "Suspend":
-            self.lifeCycle.BSuspend()
-            self.__suspendToDisk(epoch,iter_now)
+            if self.lifeCycle.BSuspend() != "Skip":
+                self.__suspendToDisk(epoch,iter_now)
             self.lifeCycle.ASuspend()
             command = self.commandQueue.get(True)
             self.__dealCommand(command,epoch,iter_now)
         elif command == "LoadFromSuspend":
-            self.lifeCycle.BLoadFromSuspend()
-            self.__reloadFromDisk()
+            if self.lifeCycle.BLoadFromSuspend() != "Skip":
+                self.__reloadFromDisk()
             self.lifeCycle.ALoadFromSuspend()
             return
 
     def __train(self):
         nowEpoch = self.startEpoch
         while True:
-            self.lifeCycle.BOneEpoch()
-            for _iter,data in enumerate(self.trainLoader):
-                # get command
-                self.lifeCycle.BGetCommand()
-                command = None
-                try:
-                    command = self.commandQueue.get(False)
-                except Exception as e:
-                    ... # no command
-                self.lifeCycle.AGetCommand(command)
-                self.__dealCommand(command,nowEpoch,_iter)
-                
-                # run one step
-                self.lifeCycle.BModelOneStep()
-                self.model.runOneStep(data,self.logDict,_iter,nowEpoch)
-                self.lifeCycle.AModelOneStep()
-                
-                # visualize
-                if self.lifeCycle.needVisualize(nowEpoch,_iter,self.logDict,self.task.args):
-                    self.lifeCycle.BVisualize()
-                    self.model.visualize(epoch = nowEpoch, iter = _iter, log = self.logDict)
-                    self.lifeCycle.AVisualize()
+            if self.lifeCycle.BOneEpoch() != "Skip":
+                for _iter,data in enumerate(self.trainLoader):
+                    # get command
+                    if self.lifeCycle.BGetCommand() != "Skip":
+                        command = None
+                        try:
+                            command = self.commandQueue.get(False)
+                        except Exception as e:
+                            ... # no command
+                        self.__dealCommand(command,nowEpoch,_iter)
+                    self.lifeCycle.AGetCommand(command)
 
-            # output in command Line    
-            self.lifeCycle.commandLineOutput(nowEpoch,self.logDict,self.task.args)
+                    # run one step
+                    if self.lifeCycle.BModelOneStep() != "Skip":
+                        self.model.runOneStep(data,self.logDict,_iter,nowEpoch)
+                    self.lifeCycle.AModelOneStep()
 
-            # validation
-            if self.lifeCycle.needValidation(nowEpoch,self.logDict,self.task.args):
-                self.lifeCycle.BValidation()
-                self.model.validate(self.valLoader,self.logDict)
-                self.lifeCycle.AValidation()
+                    # visualize
+                    if self.lifeCycle.needVisualize(nowEpoch,_iter,self.logDict,self.task.args):
+                        if self.lifeCycle.BVisualize() != "Skip":
+                            self.model.visualize(epoch = nowEpoch, iter = _iter, log = self.logDict)
+                        self.lifeCycle.AVisualize()
 
-            # save checkpoint
-            if self.lifeCycle.needSaveModel(nowEpoch,self.logDict,self.task.args):
-                self.lifeCycle.BSaveModel()
-                self.__saveModel(nowEpoch)
-                self.lifeCycle.ASaveModel()
+                # output in command Line    
+                self.lifeCycle.commandLineOutput(nowEpoch,self.logDict,self.task.args)
+
+                # validation
+                if self.lifeCycle.needValidation(nowEpoch,self.logDict,self.task.args):
+                    if self.lifeCycle.BValidation() != "Skip":
+                        self.model.validate(self.valLoader,self.logDict)
+                    self.lifeCycle.AValidation()
+
+                # save checkpoint
+                if self.lifeCycle.needSaveModel(nowEpoch,self.logDict,self.task.args):
+                    if self.lifeCycle.BSaveModel() != "Skip":
+                        self.__saveModel(nowEpoch)
+                    self.lifeCycle.ASaveModel()
             
             self.lifeCycle.AOneEpoch()
             # break decision
@@ -319,31 +320,30 @@ class TrainProcess(Process):
         self.__initLifeCycle()
 
         self.lifeCycle.trainProcess = self
-        self.lifeCycle.BAll()
-        
-        # initialize save folder
-        self.lifeCycle.BSaveInit()
-        self.__initSave()
-        self.lifeCycle.ASaveInit()
+        if self.lifeCycle.BAll() != "Skip":
+            # initialize save folder
+            if self.lifeCycle.BSaveInit() != "Skip":
+                self.__initSave()
+            self.lifeCycle.ASaveInit()
 
-        self.__loadOthers()
-        
-        # initialize dataset
-        self.lifeCycle.BDatasetInit()
-        self.__initDataset()
-        self.lifeCycle.dataset = self.dataset
-        self.lifeCycle.ADatasetInit()
-        
-        # initialize model
-        self.lifeCycle.BModelInit()
-        self.__initModel()
-        self.lifeCycle.model = self.model
-        self.lifeCycle.AModelInit()
+            self.__loadOthers()
 
-        # train
-        self.lifeCycle.BTrain()
-        self.__train()
-        self.lifeCycle.ATrain()
+            # initialize dataset
+            if self.lifeCycle.BDatasetInit() != "Skip":
+                self.__initDataset()
+                self.lifeCycle.dataset = self.dataset
+            self.lifeCycle.ADatasetInit()
+
+            # initialize model
+            if self.lifeCycle.BModelInit() != "Skip":
+                self.__initModel()
+                self.lifeCycle.model = self.model
+            self.lifeCycle.AModelInit()
+
+            # train
+            if self.lifeCycle.BTrain() != "Skip":
+                self.__train()
+            self.lifeCycle.ATrain()
 
         #finalize
         self.lifeCycle.AAll()

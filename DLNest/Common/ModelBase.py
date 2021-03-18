@@ -1,7 +1,10 @@
 class ModelBase():
     def __init__(self,args : dict,datasetInfo : dict = None):
         pass
-    
+
+    def DDPOperation(self,rank : int,world_size : int):
+        pass
+
     def initLog(self):
         return {}
 

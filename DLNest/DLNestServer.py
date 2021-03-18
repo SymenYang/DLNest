@@ -68,6 +68,7 @@ class RunTrainHandler(DLNestHandler):
             jumpInLine = True if self.get_argument("jump_in_line",default = "False") == "True" else False
             multiCard = True if self.get_argument("multi_card",default = "False") == "True" else False
             noSave = True if self.get_argument("no_save",default = "False") == "True" else False
+            DDP = True if self.get_argument("DDP",default = "False") == "True" else False
             self.core.runTrain(
                 rootConfig=rootConfig,
                 description = description,
@@ -75,7 +76,8 @@ class RunTrainHandler(DLNestHandler):
                 memoryConsumption = memoryConsumption,
                 jumpInLine = jumpInLine,
                 multiCard = multiCard,
-                noSave = noSave
+                noSave = noSave,
+                DDP=DDP
             )
             self.write({
                 "status" : "success"
