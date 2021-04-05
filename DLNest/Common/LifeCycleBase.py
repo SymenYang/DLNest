@@ -1,21 +1,15 @@
+from abc import ABCMeta, abstractmethod
 from .DatasetBase import DatasetBase
 from .ModelBase import ModelBase
 
-
-class LifeCycleBase():
-    def __init__(self,model : ModelBase = None,dataset : DatasetBase = None, trainProcess = None, analyzeProcess = None):
+class LifeCycleBase:
+    def __init__(self,model : ModelBase = None,dataset : DatasetBase = None, taskProcess = None, rank : int = -1):
         self.model = model
         self.dataset = dataset
-        self.trainProcess = trainProcess
-        self.analyzeProcess = analyzeProcess
+        self.taskProcess = taskProcess
+        self.rank = rank
     
     def BAll(self):
-        pass
-
-    def BSaveInit(self):
-        pass
-
-    def ASaveInit(self):
         pass
 
     def BDatasetInit(self):
@@ -66,6 +60,7 @@ class LifeCycleBase():
     def AModelOneStep(self):
         pass
 
+    @abstractmethod
     def needVisualize(self, epoch : int, iter : int, logdict : dict, args : dict):
         return False
     
@@ -75,6 +70,7 @@ class LifeCycleBase():
     def AVisualize(self):
         pass
 
+    @abstractmethod
     def needValidation(self, epoch : int, logdict : dict, args : dict):
         return False
 
@@ -87,6 +83,7 @@ class LifeCycleBase():
     def commandLineOutput(self,epoch : int, logdict : dict, args : dict):
         print("Epoch #" + str(epoch) + " finished!")
 
+    @abstractmethod
     def needSaveModel(self, epoch : int, logdict : dict, args : dict):
         return True
 
@@ -96,11 +93,19 @@ class LifeCycleBase():
     def ASaveModel(self):
         pass
 
+    @abstractmethod
     def holdThisCheckpoint(self, epoch : int, logdict : dict, args : dict):
         return False
 
+    @abstractmethod
     def needContinueTrain(self, epoch : int, logdict : dict, args : dict):
         return False
+    
+    def getSaveDict(self):
+        return {}
+
+    def loadSaveDict(self,saveDict):
+        pass
 
     def AAll(self):
         pass

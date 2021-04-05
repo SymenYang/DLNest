@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='DLNest',
-    version='0.2.0',
+    version='0.3.0beta0',
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
@@ -16,8 +16,7 @@ setup(
     package_data={
         "DLNest":[
             "FactoryFiles/*",
-            "FactoryFiles/*/*"
-           ,"DLNest_config.json"
+            "FactoryFiles/*/*",
         ]
     },
     python_requires=">=3.6" 

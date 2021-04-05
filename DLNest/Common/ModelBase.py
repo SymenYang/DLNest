@@ -1,24 +1,48 @@
-class ModelBase():
-    def __init__(self,args : dict,datasetInfo : dict = None):
+from abc import ABCMeta, abstractmethod
+
+class ModelBase:
+    def __init__(self,envType : str,rank = -1):
+        self.envType = envType
+        self.rank = rank
+        pass
+    
+    @abstractmethod
+    def init(self,args : dict, datasetInfo : dict = None):
+        self.args = args
+        pass
+    
+    @abstractmethod
+    def initOptimizer(self):
+        pass
+    
+    @abstractmethod
+    def DDPOperation(self,rank : int):
         pass
 
-    def DDPOperation(self,rank : int,world_size : int):
+    def afterDDP(self, rank : int):
+        """
+        For SyncBN or something else.
+        """
         pass
 
+    @abstractmethod
     def initLog(self):
         return {}
-
+    
+    @abstractmethod
     def getSaveDict(self):
         return {}
-
-    def loadSaveDict(self,saveDict : dict):
+    
+    @abstractmethod
+    def loadSaveDict(self,saveDict):
         pass
 
-    def runOneStep(self,data,log : dict,iter : int,epoch : int):
+    @abstractmethod
+    def runOneStep(self,data,log : dict, iter : int, epoch : int):
         pass
 
-    def visualize(self, log : dict, iter : int, epoch : int):
+    def visualize(self,log : dict, iter : int, epoch : int):
         pass
 
-    def validate(self,valLoader,log : dict):
+    def validate(self,valLoader, log : dict):
         pass
