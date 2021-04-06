@@ -1,18 +1,19 @@
 import torch
 import torch.nn as nn
+import torch.distributed as dist
 from .ModelBase import ModelBase
 from abc import ABCMeta, abstractmethod
 
 class ModelBaseTorch(ModelBase):
-    def __init__(self,envType : str,rank = -1):
-        super(ModelBaseTorch,self).__init__(envType = envType,rank = rank)
+    def __init__(self,_envType : str,rank = -1):
+        super(ModelBaseTorch,self).__init__(_envType = _envType,rank = rank)
         self.__modelList = []
     
     def DDPOperation(self,rank : int):
         pass
 
     def register(self,model : nn.Module,syncBN : bool = False):
-        if self.envType == "DDP":
+        if self._envType == "DDP":
             model = model.cuda()
             if syncBN:
                 model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -24,7 +25,7 @@ class ModelBaseTorch(ModelBase):
             )
             return model
         else:
-            if self.envType != "CPU":
+            if self._envType != "CPU":
                 model = model.cuda()
             self.__modelList.append(model)
             return model
@@ -38,3 +39,13 @@ class ModelBaseTorch(ModelBase):
     def loadSaveDict(self,saveDict):
         for i in range(len(self.__modelList)):
             self.__modelList[i].load_state_dict(saveDict[i])
+
+    def _reduce(self,tensor):
+        """
+        ALPHA VERSION FUNCTION
+
+        reduce tensor if using DDP,
+        if not using DDP, do nothing.
+        """
+        if self._envType == "DDP":
+            dist.reduce(tensor,0)

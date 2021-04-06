@@ -1,8 +1,8 @@
 from abc import ABCMeta, abstractmethod
 
 class ModelBase:
-    def __init__(self,envType : str,rank = -1):
-        self.envType = envType
+    def __init__(self,_envType : str,rank = -1):
+        self._envType = _envType
         self.rank = rank
         pass
     

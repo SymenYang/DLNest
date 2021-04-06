@@ -38,7 +38,6 @@ class TrainProcess(TaskProcess):
 
     def mainLoop(self):
         nowEpoch = self.finishedEpoch + 1
-        print(self.task.commandQueue)
         while True:
             if self.lifeCycle.BOneEpoch != "Skip":
                 if self.envType == "DDP":

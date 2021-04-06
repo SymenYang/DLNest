@@ -57,7 +57,7 @@ class DLNestHandler(tornado.web.RequestHandler):
     def initialize(self,outputBuffer : DLNestBuffer, lock : Lock):
         self.lock = lock
         self.outputBuffer = outputBuffer
-        self.DEBUG = True
+        self.DEBUG = False
     
     def beforeExec(self,appName : str = "DLNest"):
         if self.lock.acquire():

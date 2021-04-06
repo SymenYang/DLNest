@@ -97,7 +97,7 @@ class InfoCenter(Singleton):
         newList = []
         for item in newDevicesIDList:
             if item < -1 or item >= len(self.devices):
-                print("Wrong devices " + str(item))
+                print("Wrong device " + str(item))
             else:
                 newList.append(item)
         self.availableDevices = newList
