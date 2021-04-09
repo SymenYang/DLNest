@@ -1,0 +1,6 @@
+{
+    "dataset_config" : {
+        "data_root" : "",
+        "batch_size" : 64
+    }
+}

@@ -112,6 +112,14 @@ class OutputLayerBase():
             finally:
                 self.lock.release()
 
+    def clear(self):
+        if self.lock.acquire():
+            try:
+                self.offset = 0
+                self.styledText = []
+            finally:
+                self.lock.release()
+
     def write(self,message : str):
         if self.isLineHead:
             self.putStyledText('app',"[" + self.appName + "] ")

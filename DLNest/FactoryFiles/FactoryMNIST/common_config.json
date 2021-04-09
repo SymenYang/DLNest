@@ -1,0 +1,6 @@
+{
+    "other_file_paths":[
+        "./Model/MNISTCNN.py"
+    ],
+    "epochs" : 5
+}

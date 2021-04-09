@@ -10,6 +10,7 @@ import time
 import os
 
 try:
+    import torch
     import torch.distributed as dist
 except ImportError:
     pass
@@ -45,8 +46,18 @@ class TrainProcess(TaskProcess):
                 for _iter,data in enumerate(self.trainLoader):
                     # run one step
                     if self.lifeCycle.BModelOneStep() != "Skip":
+                        # move data to the proper location
                         if self.envType != "CPU":
-                            data = data.cuda()
+                            if isinstance(data,torch.Tensor):
+                                data = data.cuda()
+                            elif isinstance(data,list):
+                                for index in range(len(data)):
+                                    if isinstance(data[index],torch.Tensor):
+                                        data[index] = data[index].cuda()
+                            elif isinstance(data,dict):
+                                for key in data:
+                                    if isinstance(data[key],torch.Tensor):
+                                        data[key] = data[key].cuda() 
                         self.model.runOneStep(data,self.logDict,_iter,nowEpoch)
                     self.lifeCycle.AModelOneStep()
 
@@ -94,7 +105,9 @@ class TrainProcess(TaskProcess):
     def loadCkpt(self):
         super().loadCkpt()
         if self.task.loadCkpt:
-            self.task.savePackage.setCkptID(self.task.checkpointID + 1)
+            if self.task.checkpointID != -1:
+                # -1 means the last one,which is default option. != -1 needs to set the ckptID rather than default
+                self.task.savePackage.setCkptID(self.task.checkpointID + 1)
 
 if __name__ == "__main__":
     TT = TrainTask.fromConfigFile("/root/code/DLNestTest/root_config.json",devices = [0,1,2,3],noSave = True,DDP = True)

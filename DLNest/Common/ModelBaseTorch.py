@@ -5,8 +5,8 @@ from .ModelBase import ModelBase
 from abc import ABCMeta, abstractmethod
 
 class ModelBaseTorch(ModelBase):
-    def __init__(self,_envType : str,rank = -1):
-        super(ModelBaseTorch,self).__init__(_envType = _envType,rank = rank)
+    def __init__(self,_envType : str,rank = -1,worldSize = -1):
+        super(ModelBaseTorch,self).__init__(_envType = _envType,rank = rank,worldSize = worldSize)
         self.__modelList = []
     
     def DDPOperation(self,rank : int):
@@ -18,12 +18,15 @@ class ModelBaseTorch(ModelBase):
             if syncBN:
                 model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
             self.__modelList.append(model)
-            model = nn.parallel.DistributedDataParallel(
-                model,
-                device_ids=[self.rank],
-                output_device=self.rank
-            )
-            return model
+            try:
+                model = nn.parallel.DistributedDataParallel(
+                    model,
+                    device_ids=[self._rank],
+                    output_device=self._rank
+                )
+                return model
+            except AssertionError:
+                return model
         else:
             if self._envType != "CPU":
                 model = model.cuda()
@@ -40,7 +43,7 @@ class ModelBaseTorch(ModelBase):
         for i in range(len(self.__modelList)):
             self.__modelList[i].load_state_dict(saveDict[i])
 
-    def _reduce(self,tensor):
+    def _reduceSum(self,tensor):
         """
         ALPHA VERSION FUNCTION
 
@@ -49,3 +52,17 @@ class ModelBaseTorch(ModelBase):
         """
         if self._envType == "DDP":
             dist.reduce(tensor,0)
+        return tensor
+
+    def _reduceMean(self,tensor):
+        """
+        ALPHA VERSION FUNCTION
+
+        reduce tensor if using DDP,
+        if not using DDP, do nothing.
+        """
+        if self._envType == "DDP":
+            dist.reduce(tensor,0)
+            if self._rank == 0:
+                tensor = tensor / self._worldSize
+        return tensor

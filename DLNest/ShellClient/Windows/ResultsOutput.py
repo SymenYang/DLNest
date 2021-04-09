@@ -43,7 +43,7 @@ class styledTextLexer(Lexer):
                 print(lines,file = f)
                 print(len(lines),len(self.styled_text_lines),file=f)
 
-        def get_line(lineno : int) ->StyleAndTextTuples:
+        def get_line(lineno : int) -> StyleAndTextTuples:
             try:
                 return self.styled_text_lines[lineno]
             except Exception:

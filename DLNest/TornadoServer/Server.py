@@ -6,6 +6,7 @@ from DLNest.Operations.Analyze import analyze
 from DLNest.Operations.ChangeDelay import changeDelay
 from DLNest.Operations.ChangeDevices import changeDevices
 from DLNest.Operations.ChangeMaxTaskPerDevice import changeMaxTaskPerDevice
+from DLNest.Operations.ClearDLNestOutput import clearDLNestOutput
 from DLNest.Operations.ContinueTrain import continueTrain
 from DLNest.Operations.DelATask import delATask
 from DLNest.Operations.GetAnalyzeOutput import getAnalyzeOutput
@@ -36,6 +37,7 @@ class DLNestServer:
                 (r'/change_delay',ChangeDelayHandler,{"outputBuffer" : self.outputBuffer, "lock" : self.singleLock}),
                 (r'/change_devices',ChangeDevicesHandler,{"outputBuffer" : self.outputBuffer, "lock" : self.singleLock}),
                 (r'/change_max_task_per_device',ChangeMaxTaskPerDeviceHandler,{"outputBuffer" : self.outputBuffer, "lock" : self.singleLock}),
+                (r'/clear',ClearHandler,{"outputBuffer" : self.outputBuffer, "lock" : self.singleLock}),
                 (r'/continue_train',ContinueTrainHandler,{"outputBuffer" : self.outputBuffer, "lock" : self.singleLock}),
                 (r'/del_task',DelTaskHandler,{"outputBuffer" : self.outputBuffer, "lock" : self.singleLock}),
                 (r'/get_analyze_output',GetAnalyzeOutputHandler,{"outputBuffer" : self.outputBuffer, "lock" : self.singleLock}),
@@ -168,6 +170,28 @@ class ChangeMaxTaskPerDeviceHandler(DLNestHandler):
                 "status" : "success"
             })
             print("Change max tasks per device to",newMax)
+        except Exception as e:
+            self.write({
+                "status" : "error",
+                "error" : str(e)
+            })
+            traceback.print_exc()
+        finally:
+            self.afterExec()
+            if self.DEBUG:
+                print(self.outputBuffer.getPlainText()[1])
+
+
+class ClearHandler(DLNestHandler):
+    def post(self):
+        try:
+            self.beforeExec("Clear")
+
+            clearDLNestOutput()
+
+            self.write({
+                "status" : "success"
+            })
         except Exception as e:
             self.write({
                 "status" : "error",
@@ -350,8 +374,9 @@ class NewProjectHandler(DLNestHandler):
             self.beforeExec("New project")
 
             targetDir = self.get_argument("target_dir")
+            MNIST = True if self.get_argument("MNIST",default = "False") == "True" else False
             
-            new(targetDir)
+            new(targetDir,MNIST = MNIST)
 
             self.write({
                 "status" : "success"
@@ -425,7 +450,7 @@ class RunExpHandler(DLNestHandler):
             self.write({
                 "status" : "success"
             })
-            print("Run train",command,"to",taskID)
+            print("Run exp",command,"to",taskID)
         except Exception as e:
             self.write({
                 "status" : "error",

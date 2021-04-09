@@ -43,6 +43,7 @@ class ProjectArguments(Arguments):
         super(ProjectArguments, self).__init__(desc="Arguments for create a DLNest project.")
 
         self._parser.add_argument("-d",type=str, help="Path to the directory you want to create the project.", required = True)
+        self._parser.add_argument("-MNIST",action='store_true', help="Set to new a project with MNIST task.")
 
 class AnalyzeArguments(Arguments):
     def __init__(self):
@@ -95,7 +96,11 @@ class DLNestLocal:
         )
 
     def newProject(self,commandWordList : list):
-        pass
+        args,otherArgs = self.projectArgParser.parser().parse_known_args(commandWordList[1:])
+        new(
+            targetDir = args.d,
+            MNIST = args.MNIST
+        )
 
     def runAnalyze(self,commandWordList : list):
         args,otherArgs = self.analyzeArgParser.parser().parse_known_args(commandWordList[1:])

@@ -1,9 +1,10 @@
 from abc import ABCMeta, abstractmethod
 
 class ModelBase:
-    def __init__(self,_envType : str,rank = -1):
+    def __init__(self,_envType : str,rank = -1,worldSize = -1):
         self._envType = _envType
-        self.rank = rank
+        self._rank = rank
+        self._worldSize = worldSize
         pass
     
     @abstractmethod

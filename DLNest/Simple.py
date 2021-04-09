@@ -5,6 +5,8 @@ from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 import traceback
 import json
 from DLNest.ShellClient.Communicator import Communicator
+
+
 class DLNestSimple:
     def __init__(self, url : str = "127.0.0.1", port : int = 9999):
         self.communicator = Communicator(url = url, port = port)

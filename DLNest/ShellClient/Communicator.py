@@ -34,6 +34,7 @@ class ProjectArguments(Arguments):
         super(ProjectArguments, self).__init__(desc="Arguments for create a DLNest project.")
 
         self._parser.add_argument("-d",type=str, help="Path to the directory you want to create the project.", required = True)
+        self._parser.add_argument("-MNIST",action='store_true', help="Set to new a project with MNIST task.")
 
 class AnalyzeArguments(Arguments):
     def __init__(self):
@@ -137,7 +138,8 @@ class Communicator:
         commandWordList = self.shortenList(commandWordList)
         args,otherArgs = self.projectArgParser.parser().parse_known_args(commandWordList[1:])
         r = requests.post(self.url + "/new_proj",{
-            "target_dir" : args.d
+            "target_dir" : args.d,
+            "MNIST" : args.MNIST
         })
         return json.loads(r.text)
 
@@ -231,6 +233,11 @@ class Communicator:
         })
         return json.loads(r.text)
 
+    @stableRun
+    def clear(self):
+        r = requests.post(self.url + "/clear",{})
+        return json.loads(r.text)
+
     def giveACommand(self, commandWordList : list):
         if commandWordList[0] == "run":
             return self.runTrain(commandWordList)
@@ -252,8 +259,10 @@ class Communicator:
             return self.getTasksInformation()
         elif commandWordList[0] == "showDevice":
             return self.getDevicesInformation()
-        elif commandWordList[0] == 'changeDevices':
+        elif commandWordList[0] == "changeDevices":
             return self.changeDevices(commandWordList)
+        elif commandWordList[0] == "clear":
+            return self.clear()
         elif commandWordList[0] == "exit":
             return {"exit" : True}
         else:

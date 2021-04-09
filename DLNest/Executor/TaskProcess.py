@@ -27,6 +27,7 @@ class TaskProcess(Process):
         self.task = task
         self.finishedEpoch = -1
         self.rank = -1
+        self.worldSize = -1
     
     def __loadAModule(self,filePath : Path,name : str):
         if not filePath.is_absolute():
@@ -75,7 +76,7 @@ class TaskProcess(Process):
         modelName = self.task.args['model_name']
         if modelName in dir(self.modelModule):
             modelClass = self.modelModule.__getattribute__(modelName)
-            self.model = modelClass(_envType = self.envType,rank = self.rank)
+            self.model = modelClass(_envType = self.envType,rank = self.rank,worldSize = self.worldSize)
             self.model.init(self.task.args,self.datasetInfo)
             if self.envType != "DDP":
                 self.model.initOptimizer()
@@ -127,12 +128,13 @@ class TaskProcess(Process):
     def initBeforeDDP(self):
         self.seed = random.randint(0,2147483647)
 
-    def initAfterDDP(self,rank,world_size):
+    def initAfterDDP(self,rank,worldSize):
         os.environ["MASTER_ADDR"] = self.task.address
         os.environ["MASTER_PORT"] = self.task.port
         torch.cuda.set_device(rank)
-        dist.init_process_group("nccl", rank = rank, world_size = world_size)
+        dist.init_process_group("nccl", rank = rank, world_size = worldSize)
         self.rank = rank
+        self.worldSize = worldSize
         self.setupSeed()
     
     def runDDP(self,rank):
