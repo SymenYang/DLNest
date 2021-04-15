@@ -30,7 +30,7 @@ class TaskInformation:
         self.status = "Pending"
         self.process = None
 
-        self.port = "16484" # default port
+        self.port = str(45535 + random.randint(0,20000)) # default port
         self.address = 'localhost' # default address
         self.savePackage = savePackage
         self.loadCkpt = loadCkpt

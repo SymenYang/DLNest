@@ -39,8 +39,11 @@ class TrainProcess(TaskProcess):
 
     def mainLoop(self):
         nowEpoch = self.finishedEpoch + 1
+        if self.lifeCycle.BTrain() == "Skip":
+            self.lifeCycle.ATrain()
+            return
         while True:
-            if self.lifeCycle.BOneEpoch != "Skip":
+            if self.lifeCycle.BOneEpoch() != "Skip":
                 if self.envType == "DDP":
                     self.trainLoader.sampler.set_epoch(nowEpoch)
                 for _iter,data in enumerate(self.trainLoader):
@@ -94,6 +97,7 @@ class TrainProcess(TaskProcess):
                 else:
                     if self.lifeCycle.BSaveModel() != "Skip":
                         self.__saveModel()
+                self.lifeCycle.ASaveModel()
 
             self.lifeCycle.AOneEpoch()
              # break decision
@@ -101,6 +105,9 @@ class TrainProcess(TaskProcess):
                 nowEpoch = self.finishedEpoch + 1
             else:
                 break
+        
+        # After Train
+        self.lifeCycle.ATrain()
 
     def loadCkpt(self):
         super().loadCkpt()

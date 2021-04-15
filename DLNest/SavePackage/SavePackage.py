@@ -45,6 +45,13 @@ class SavePackage:
         self.checkpointsDir = None
         self.prefix = "state_"
 
+    def giveArgs(self,args : dict):
+        self.args = args
+        self.maxCkptSlow = self.args["checkpoint_args"]["max_ckpt_in_slow_track"]
+        self.maxCkptFast = self.args["checkpoint_args"]["max_ckpt_in_fast_track"]
+        self.maxCkptConsisitent = self.args["checkpoint_args"]["max_ckpt_in_consistent_track"]
+        self.slowDilation = self.args["checkpoint_args"]["dilation_in_slow_track"]
+
     def __replaceArgs(self,newArgName,newArgValue,args):
         """
         newArgName : 应该是args下的名称
@@ -138,7 +145,7 @@ class SavePackage:
         self.ckptConsistent = packageInfo["ckpt_consistent"]
         self.prefix = packageInfo["prefix"]
 
-    def saveToNewDir(self,overrideSaveName : str = ""):
+    def saveToNewDir(self,overrideSaveName : str = "",copyFiles = True):
         """
         Make a new save package. If having the override save name, use it. If not, use timestamp to save.
         """
@@ -161,12 +168,13 @@ class SavePackage:
         self.checkpointsDir.mkdir(parents=True,exist_ok=True)
         self.ckpts = {}
 
-        # copy python files into dir
-        self.__copyAFile(Path(self.args["model_file_path"]),saveDir)
-        self.__copyAFile(Path(self.args["dataset_file_path"]),saveDir)
-        self.__copyAFile(Path(self.args["life_cycle_file_path"]),saveDir)
-        for item in self.args["other_file_paths"]:
-            self.__copyAFile(Path(item),saveDir)
+        # copy python files into dir if copy Files is TRUE
+        if copyFiles:
+            self.__copyAFile(Path(self.args["model_file_path"]),saveDir)
+            self.__copyAFile(Path(self.args["dataset_file_path"]),saveDir)
+            self.__copyAFile(Path(self.args["life_cycle_file_path"]),saveDir)
+            for item in self.args["other_file_paths"]:
+                self.__copyAFile(Path(item),saveDir)
 
         # save args
         argsPath = saveDir / "args.json"

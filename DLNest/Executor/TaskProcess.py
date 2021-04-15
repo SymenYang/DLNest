@@ -56,9 +56,11 @@ class TaskProcess(Process):
             raise Exception("Cannot find lifeCycle class")
 
     def __loadModelAndDataset(self):
-        self.modelModule = self.__loadAModule(Path(self.task.args["model_file_path"]),"Model")
-        self.datasetModule = self.__loadAModule(Path(self.task.args["dataset_file_path"]),"Dataset")
-        sys.modules["Dataset"] = self.datasetModule
+        modelPath = Path(self.task.args["model_file_path"])
+        datasetPath = Path(self.task.args["dataset_file_path"])
+        self.modelModule = self.__loadAModule(modelPath,modelPath.stem)
+        self.datasetModule = self.__loadAModule(datasetPath,datasetPath.stem)
+        sys.modules[datasetPath.stem] = self.datasetModule
 
     def __initDataset(self):
         datasetName = self.task.args['dataset_name']

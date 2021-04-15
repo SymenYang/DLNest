@@ -400,7 +400,7 @@ class RunTrainHandler(DLNestHandler):
             self.beforeExec("Run train")
 
             configPath = self.get_argument("config_path")
-            freqPath = self.get_argument("freq_path")
+            freqPath = self.get_argument("freq_path", default = "")
             description = self.get_argument("description", default = "")
             memoryConsumption = int(self.get_argument("memory_consumption", default = "-1"))
             CPU = True if self.get_argument("CPU",default = "False") == "True" else False

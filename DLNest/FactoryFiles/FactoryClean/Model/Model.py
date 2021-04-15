@@ -1,4 +1,4 @@
-from DLNest.Common.ModelBaseTorch import ModelBase
+from DLNest.Common.ModelBase import ModelBase
 
 class Model(ModelBase):
     def init(self,args : dict,datasetInfo : dict = None):
