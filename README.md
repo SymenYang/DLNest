@@ -401,4 +401,3 @@ def setCkptID(self,ckptID : int):
 1. 在使用DDP训练，保存模型时退出模型会造成进程泄漏，部分进程不会被关闭
 2. Shell Client的输出显示清空时可能会有一行清空不干净
 3. 在一些screen内部可能出现client显示异常
-4. DDP时子进程的stderr的重定向失败

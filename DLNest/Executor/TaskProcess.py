@@ -222,11 +222,14 @@ class TaskProcess(Process):
             # run DDP
             self.ppid = os.getpid()
             self.initBeforeDDP()
-            mp.spawn(
+            context = mp.spawn(
                 self.runDDP,
                 nprocs=self.deviceNum,
-                join=True
+                join=False
             )
+            self.initOutput()
+            while not context.join():
+                pass
         else:
             self.initOutput()
             self.loadCkpt()

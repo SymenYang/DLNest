@@ -9,10 +9,11 @@ import time
 from multiprocessing import Pipe
 
 class AnalyzeRunner:
-    def __init__(self,args : dict, model , dataset):
+    def __init__(self,args : dict, model , dataset, log : dict):
         self.args = args
         self.model = model
         self.dataset = dataset
+        self.log = log
 
 class AnalyzeProcess(TaskProcess):
     def __init__(self,task : AnalyzeTask, outputBuffer : AnalyzerBuffer = None, expFunc = None):
@@ -34,7 +35,7 @@ class AnalyzeProcess(TaskProcess):
         self.expFunc(self.runner)
 
     def mainLoop(self):
-        self.runner = AnalyzeRunner(self.task.args,self.model,self.dataset)
+        self.runner = AnalyzeRunner(self.task.args,self.model,self.dataset,self.logDict)
         if self.expFunc != None:
             # Have a setted exp to run
             self.runExp()
