@@ -93,10 +93,12 @@ class TrainProcess(TaskProcess):
                 #save checkpoint
                 if self.envType == "DDP":
                     if self.rank == 0 and self.lifeCycle.BSaveModel() != "Skip":
-                        self.__saveModel()
+                        if self.lifeCycle.needSaveModel(self.finishedEpoch,self.logDict,self.task.args):
+                            self.__saveModel()
                 else:
                     if self.lifeCycle.BSaveModel() != "Skip":
-                        self.__saveModel()
+                        if self.lifeCycle.needSaveModel(self.finishedEpoch,self.logDict,self.task.args):
+                            self.__saveModel()
                 self.lifeCycle.ASaveModel()
 
             self.lifeCycle.AOneEpoch()

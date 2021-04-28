@@ -27,7 +27,7 @@ class AnalyzeTask(TaskInformation):
             memoryConsumption = memoryConsumption,
             multiGPU = False,
             DDP = DDP,
-            loadCkpt = True,
+            loadCkpt = True if checkpointID != -2 else False,
             checkpointID = checkpointID
         )
         self.ID = "A_" + self.ID

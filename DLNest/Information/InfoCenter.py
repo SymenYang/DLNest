@@ -114,6 +114,8 @@ class InfoCenter(Singleton):
                     continue
                 else:
                     newList.append(item)
+            else:
+                newList.append(item)
         self.tasks = newList
 
     def getTasksInformation(self):

@@ -130,6 +130,10 @@ class Client:
         while "" in commandWordList:
             commandWordList.remove("")
 
+        # no command
+        if len(commandWordList) <= 0:
+            return
+
         if commandWordList[0] == "watch":
             self.analyzeTaskID = commandWordList[1]
         elif commandWordList[0] == "withdraw":

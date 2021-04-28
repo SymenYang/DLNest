@@ -24,6 +24,7 @@ class AnalyzeProcess(TaskProcess):
 
     def initOutput(self,rank = -1):
         assert rank == -1
+        sys.path.append(str(self.task.scriptPath))
         if self.output != None:
             self._debugf = sys.stdout
             sys.stdout = self.output
