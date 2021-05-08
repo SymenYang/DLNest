@@ -116,6 +116,7 @@ class TaskProcess(Process):
             return "GPUs"
         else:
             os.environ["CUDA_VISIBLE_DEVICES"] = ids[0]
+            torch.cuda.set_device(self.task.devices[0])
             return "GPU"
     
     def setupSeed(self):

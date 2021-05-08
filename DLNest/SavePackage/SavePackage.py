@@ -250,6 +250,8 @@ class SavePackage:
         """
         visualFile = self.root / ("_" + visualString)
         visualFile.touch()
+        with open(visualFile,"w") as f:
+            f.write(visualString)
 
     def initCkptsFromExist(self):
         self.checkpointsDir = self.root / "Checkpoints"
