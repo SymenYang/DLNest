@@ -28,6 +28,7 @@ class TrainProcess(TaskProcess):
         """
         redirect the output
         """
+        os.chdir(self.task.args["root_file_path"]) # Change CWD to the save package
         outputFP = self.task.savePackage.getOutputFile(rank)
         self.outputDelegate = TrainStdout(outputFP,showOnScreen = self.showOnScreen,originalStdout = sys.stdout)
         sys.stdout = self.outputDelegate

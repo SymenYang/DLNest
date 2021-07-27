@@ -4,6 +4,7 @@ from DLNest.Output.AnalyzerBuffer import AnalyzerBuffer
 from pathlib import Path
 import sys
 import importlib
+import os
 
 import time
 from multiprocessing import Pipe
@@ -24,6 +25,7 @@ class AnalyzeProcess(TaskProcess):
 
     def initOutput(self,rank = -1):
         assert rank == -1
+        os.chdir(self.task.args["root_file_path"]) # Change CWD to the save package
         sys.path.append(str(self.task.scriptPath))
         if self.output != None:
             self._debugf = sys.stdout

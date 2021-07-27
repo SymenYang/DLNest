@@ -40,7 +40,7 @@ class DefaultStrategy(SchedulerStrategyBase):
         
         return True
 
-    def __canTaskRunOnDevices(self, task : TaskInformation, devices : [DeviceInformation]):
+    def __canTaskRunOnDevices(self, task : TaskInformation, devices):
         """
         return [] if cannot
         return [ids] if can run
@@ -75,7 +75,7 @@ class DefaultStrategy(SchedulerStrategyBase):
         else:
             return ret
 
-    def __findARuningDevice(self, task : TaskInformation, devices : [DeviceInformation]):
+    def __findARuningDevice(self, task : TaskInformation, devices):
         """
         return [] if cannot
         return [id] if can run

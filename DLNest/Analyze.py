@@ -56,7 +56,7 @@ def analyze(
     recordPath : str,
     checkpointID : int = -1,
     scriptPath : str = "",
-    devices : [int] = [0],
+    devices = [0],
     expFunc = None
 ):
     AnalyzeIndependent(
