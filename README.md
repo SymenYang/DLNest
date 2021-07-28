@@ -5,9 +5,7 @@ DLNest是一个深度学习训练\实验框架，轻依赖于pytorch，实现单
 ### 安装
 安装DLNest：
 ```bash
-git clone https://github.com/SymenYang/DLNest.git
-cd DLNest
-pip install .
+pip install git+https://github.com/SymenYang/DLNest.git
 ```
 启动DLNest服务器：
 ```bash
@@ -130,7 +128,8 @@ Server则通过调用Operation层中的函数来进行各式各样的操作。
 ```
 可以看到与项目目录格式基本一致，区别在于多了Checkpoints目录与一些json文件。其中。args.json为训练时所有参数的集合，相当于所有参数都写在了root_config.json中的效果。由于相似的目录结构，DLNest能够很方便的从一个保存包中再次加载模型和数据集，进行分析、继续训练或者重新训练。  
 \_package.json保存了保存包加载所需要的一些信息，包括checkpoints前缀名（默认为“state\_”）、不同保存track保存的index等。DLNest的保存包使用快、慢、持久三通道保存策略，其中快通道保存最新的一定数量checkpoint，慢通道每隔一定间隔保存一个checkpoint，而持久通道则由用户代码来定义是否进入。每个通道都有一个checkpoint数量上限，当该通道checkpoint数量超过上限时，最老的checkpoints将会被从硬盘中删除。由于一个checkpoint能够进入多个通道，因此一个checkpoint只会在其被所有通道抛弃之后才被从硬盘里删除。训练结束之后也能够通过\_package.json来辨认不同通道的checkpoint的index分别为多少。  
-\_output.txt则保存了训练进程的输出。若训练进程有多个，则每个进程一个输出文件。
+\_output.txt则保存了训练进程的输出。若训练进程有多个，则每个进程一个输出文件。  
+同时，无论在训练还是分析进程中，当前工作目录均被设为保存包目录。
 ### 训练/分析任务进程
 训练任务进程控制了整个训练的流程，其输入为一个训练任务信息，包括了保存包、训练设备配置等内容。而分析进程则加载一个保存包进行分析，运行分析脚本。这两种进程有很大一部分工作是相同的，包括加载代码等，其流程如下：
 1. 判断设备信息，包括CPU、GPU、GPUs、DDP（仅训练）
@@ -271,7 +270,7 @@ python -m DLNest.Local
 
 1.      new -d <新建项目的指定路径> [-MNIST （使用则新建一个包含MNIST分类任务代码实现的项目）]；在指定路径新建一个项目
 2.      run -c <入口config.json路径> [-f <调参config.json路径>] [-m <估计占用显存（MB），默认为0号显卡总显存的90%>] [-d <对该次训练的描述>] [-ns （使用NOSAVE目录名保存保存包）] [-mc （在单卡显存不满足预估显存时，尝试使用多卡）] [-sd （使用描述字符串作为目录名保存保存包，被ns覆盖）] [-DDP （使用DDP，使用该选项相当于自动设置了mc）] [-CPU （使用CPU进行训练，直接不参与显卡排卡，与DDP互斥）]
-3.      continue -r <继续训练的保存包路径> [-c <准备加载的checkpoint编号，默认为最新>] [-d<对该次训练的描述>] [-m <估计占用显存（MB），默认为0号显卡总显存的90%>] [-mc （同run）] [-DDP （同run）] [-CPU （同run）]
+3.      continue -r <继续训练的保存包路径> [-c <准备加载的checkpoint编号，默认为最新>] [-d <对该次训练的描述>] [-m <估计占用显存（MB），默认为0号显卡总显存的90%>] [-mc （同run）] [-DDP （同run）] [-CPU （同run）]
 4.      analyze -r <分析加载的保存包路径> [-c  <准备加载的checkpoint编号，默认为最新>] [-s <脚本文件搜索目录，默认为项目目录下的AnalyzeScript目录>] [-m （同run）] [-CPU （使用CPU进行分析）]
 5.      showTask （打印现有的Task信息）
 6.      showDevices （打印可用设备信息）

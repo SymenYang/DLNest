@@ -39,75 +39,78 @@ class TrainProcess(TaskProcess):
         self.saveCkpt(holdThisCheckpoint = holdThisCheckpoint)
 
     def mainLoop(self):
-        nowEpoch = self.finishedEpoch + 1
-        if self.lifeCycle.BTrain() == "Skip":
-            self.lifeCycle.ATrain()
-            return
-        while True:
-            if self.lifeCycle.BOneEpoch() != "Skip":
-                if self.envType == "DDP":
-                    self.trainLoader.sampler.set_epoch(nowEpoch)
-                for _iter,data in enumerate(self.trainLoader):
-                    # run one step
-                    if self.lifeCycle.BModelOneStep() != "Skip":
-                        # move data to the proper location
-                        if self.envType != "CPU":
-                            if isinstance(data,torch.Tensor):
-                                data = data.cuda()
-                            elif isinstance(data,list):
-                                for index in range(len(data)):
-                                    if isinstance(data[index],torch.Tensor):
-                                        data[index] = data[index].cuda()
-                            elif isinstance(data,dict):
-                                for key in data:
-                                    if isinstance(data[key],torch.Tensor):
-                                        data[key] = data[key].cuda() 
-                        self.model.runOneStep(data,self.logDict,_iter,nowEpoch)
-                    self.lifeCycle.AModelOneStep()
+        try:
+            nowEpoch = self.finishedEpoch + 1
+            if self.lifeCycle.BTrain() == "Skip":
+                self.lifeCycle.ATrain()
+                return
+            while True:
+                if self.lifeCycle.BOneEpoch() != "Skip":
+                    if self.envType == "DDP":
+                        self.trainLoader.sampler.set_epoch(nowEpoch)
+                    for _iter,data in enumerate(self.trainLoader):
+                        # run one step
+                        if self.lifeCycle.BModelOneStep() != "Skip":
+                            # move data to the proper location
+                            if self.envType != "CPU":
+                                if isinstance(data,torch.Tensor):
+                                    data = data.cuda()
+                                elif isinstance(data,list):
+                                    for index in range(len(data)):
+                                        if isinstance(data[index],torch.Tensor):
+                                            data[index] = data[index].cuda()
+                                elif isinstance(data,dict):
+                                    for key in data:
+                                        if isinstance(data[key],torch.Tensor):
+                                            data[key] = data[key].cuda() 
+                            self.model.runOneStep(data,self.logDict,_iter,nowEpoch)
+                        self.lifeCycle.AModelOneStep()
 
-                    # visualize
-                    if self.lifeCycle.needVisualize(nowEpoch,_iter,self.logDict,self.task.args):
-                        if self.envType == "DDP":
-                            if self.rank == 0 and self.lifeCycle.BVisualize() != "Skip":
-                                self.model.visualize(epoch = nowEpoch, iter = _iter, log = self.logDict)
-                        else:
-                            if self.lifeCycle.BVisualize() != "Skip":
-                                self.model.visualize(epoch = nowEpoch, iter = _iter, log = self.logDict)
-                        self.lifeCycle.AVisualize()
-                
-                if self.envType == "DDP":
-                    dist.barrier() # Sync before validation
+                        # visualize
+                        if self.lifeCycle.needVisualize(nowEpoch,_iter,self.logDict,self.task.args):
+                            if self.envType == "DDP":
+                                if self.rank == 0 and self.lifeCycle.BVisualize() != "Skip":
+                                    self.model.visualize(epoch = nowEpoch, iter = _iter, log = self.logDict)
+                            else:
+                                if self.lifeCycle.BVisualize() != "Skip":
+                                    self.model.visualize(epoch = nowEpoch, iter = _iter, log = self.logDict)
+                            self.lifeCycle.AVisualize()
 
-                self.finishedEpoch = nowEpoch
-                # output in command Line
-                self.lifeCycle.commandLineOutput(self.finishedEpoch,self.logDict,self.task.args)
+                    if self.envType == "DDP":
+                        dist.barrier() # Sync before validation
 
-                # validation
-                if self.lifeCycle.needValidation(self.finishedEpoch,self.logDict,self.task.args):
-                    if self.lifeCycle.BValidation() != "Skip":
-                        self.model.validate(self.valLoader,self.logDict)
-                    self.lifeCycle.AValidation()
+                    self.finishedEpoch = nowEpoch
+                    # output in command Line
+                    self.lifeCycle.commandLineOutput(self.finishedEpoch,self.logDict,self.task.args)
 
-                if self.envType == "DDP":
-                    dist.barrier() # Sync before saving
+                    # validation
+                    if self.lifeCycle.needValidation(self.finishedEpoch,self.logDict,self.task.args):
+                        if self.lifeCycle.BValidation() != "Skip":
+                            self.model.validate(self.valLoader,self.logDict)
+                        self.lifeCycle.AValidation()
 
-                #save checkpoint
-                if self.envType == "DDP":
-                    if self.rank == 0 and self.lifeCycle.BSaveModel() != "Skip":
-                        if self.lifeCycle.needSaveModel(self.finishedEpoch,self.logDict,self.task.args):
-                            self.__saveModel()
+                    if self.envType == "DDP":
+                        dist.barrier() # Sync before saving
+
+                    #save checkpoint
+                    if self.envType == "DDP":
+                        if self.rank == 0 and self.lifeCycle.BSaveModel() != "Skip":
+                            if self.lifeCycle.needSaveModel(self.finishedEpoch,self.logDict,self.task.args):
+                                self.__saveModel()
+                    else:
+                        if self.lifeCycle.BSaveModel() != "Skip":
+                            if self.lifeCycle.needSaveModel(self.finishedEpoch,self.logDict,self.task.args):
+                                self.__saveModel()
+                    self.lifeCycle.ASaveModel()
+
+                self.lifeCycle.AOneEpoch()
+                 # break decision
+                if self.lifeCycle.needContinueTrain(self.finishedEpoch,self.logDict,self.task.args):
+                    nowEpoch = self.finishedEpoch + 1
                 else:
-                    if self.lifeCycle.BSaveModel() != "Skip":
-                        if self.lifeCycle.needSaveModel(self.finishedEpoch,self.logDict,self.task.args):
-                            self.__saveModel()
-                self.lifeCycle.ASaveModel()
-
-            self.lifeCycle.AOneEpoch()
-             # break decision
-            if self.lifeCycle.needContinueTrain(self.finishedEpoch,self.logDict,self.task.args):
-                nowEpoch = self.finishedEpoch + 1
-            else:
-                break
+                    break
+        except Exception as e:
+            self.lifeCycle.TrainAborting(e)
         
         # After Train
         self.lifeCycle.ATrain()

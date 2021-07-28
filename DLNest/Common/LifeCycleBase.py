@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from .DatasetBase import DatasetBase
 from .ModelBase import ModelBase
+import traceback
 
 class LifeCycleBase:
     def __init__(self,model : ModelBase = None,dataset : DatasetBase = None, taskProcess = None, rank : int = -1):
@@ -109,3 +110,6 @@ class LifeCycleBase:
 
     def AAll(self):
         pass
+
+    def TrainAborting(self,exception : Exception):
+        traceback.print_exc()
