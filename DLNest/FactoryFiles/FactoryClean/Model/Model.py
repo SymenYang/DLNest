@@ -18,5 +18,11 @@ class Model(ModelBase):
     def visualize(self,epoch : int, iter : int, log : dict):
         pass
 
-    def validate(self,valLoader,log : dict):
+    def validationInit(self):
+        pass
+
+    def validateABatch(self,data, iter : int):
+        pass
+
+    def validationAnalyze(self, log : dict):
         pass

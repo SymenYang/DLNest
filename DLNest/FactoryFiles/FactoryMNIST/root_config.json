@@ -1,5 +1,5 @@
 {
-    "save_root":"",
+    "save_root":"./Saves",
     "model_name":"Model",
     "dataset_name":"MNISTDataset",
     "life_cycle_name":"LifeCycle",

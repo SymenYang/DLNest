@@ -47,6 +47,3 @@ class AnalyzeTask(TaskInformation):
         ret["script_path"] = str(self.scriptPath)
         ret["checkpoint_ID"] = self.checkpointID
         return ret
-
-if __name__ == "__main__":
-    AT = AnalyzeTask("/root/code/DLNestTest/Saves/Some Description","/root/code/DLNestTest/AnalyzeScripts",99)

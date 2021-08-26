@@ -110,9 +110,3 @@ class TrainTask(TaskInformation):
         ret = super().getDict()
         ret["description"] = self.description
         return ret
-
-if __name__ == "__main__":
-    TT = TrainTask.fromConfigFile("/root/code/DLNestTest/root_config.json")
-    print(TT.getDict())
-    TT = TrainTask.fromRecord("/root/code/DLNestTest/Saves/Some Description")
-    print(TT.getDict())

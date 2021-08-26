@@ -45,5 +45,11 @@ class ModelBase:
     def visualize(self,log : dict, iter : int, epoch : int):
         pass
 
-    def validate(self,valLoader, log : dict):
+    def validationInit(self):
+        pass
+
+    def validateABatch(self,data, iter : int):
+        pass
+
+    def validationAnalyze(self, log : dict):
         pass

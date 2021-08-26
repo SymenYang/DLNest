@@ -38,6 +38,53 @@ class TrainProcess(TaskProcess):
         holdThisCheckpoint = self.lifeCycle.holdThisCheckpoint(self.finishedEpoch,self.logDict,self.task.args)
         self.saveCkpt(holdThisCheckpoint = holdThisCheckpoint)
 
+    def __moveData(self,data):
+        # move data to the proper location
+        if self.envType != "CPU":
+            if isinstance(data,torch.Tensor):
+                data = data.cuda()
+            elif isinstance(data,list):
+                for index in range(len(data)):
+                    if isinstance(data[index],torch.Tensor):
+                        data[index] = data[index].cuda()
+            elif isinstance(data,dict):
+                for key in data:
+                    if isinstance(data[key],torch.Tensor):
+                        data[key] = data[key].cuda() 
+        return data
+
+    def __train_an_epoch(self,start_epoch : int):
+        nowEpoch = start_epoch
+        for _iter,data in enumerate(self.trainLoader):
+            # run one step
+            if self.lifeCycle.BModelOneStep() != "Skip":
+                data = self.__moveData(data)
+                self.model.runOneStep(data,self.logDict,_iter,nowEpoch)
+            self.lifeCycle.AModelOneStep()
+
+            # visualize
+            if self.lifeCycle.needVisualize(nowEpoch,_iter,self.logDict,self.task.args):
+                if self.envType == "DDP":
+                    if self.rank == 0 and self.lifeCycle.BVisualize() != "Skip":
+                        self.model.visualize(epoch = nowEpoch, iter = _iter, log = self.logDict)
+                else:
+                    if self.lifeCycle.BVisualize() != "Skip":
+                        self.model.visualize(epoch = nowEpoch, iter = _iter, log = self.logDict)
+                self.lifeCycle.AVisualize()
+
+
+    def __validate(self):
+        self.model.validationInit()
+        for _iter,data in enumerate(self.valLoader):
+            if self.lifeCycle.BValidateABatch() != "Skip":
+                data = self.__moveData(data)
+                self.model.validateABatch(data,_iter)
+            self.lifeCycle.AValidateABatch()
+        
+        if self.lifeCycle.BValidationAnalyze() != "Skip":
+            self.model.validationAnalyze(self.logDict)
+        self.lifeCycle.AValidationAnalyze()
+
     def mainLoop(self):
         try:
             nowEpoch = self.finishedEpoch + 1
@@ -48,33 +95,8 @@ class TrainProcess(TaskProcess):
                 if self.lifeCycle.BOneEpoch() != "Skip":
                     if self.envType == "DDP":
                         self.trainLoader.sampler.set_epoch(nowEpoch)
-                    for _iter,data in enumerate(self.trainLoader):
-                        # run one step
-                        if self.lifeCycle.BModelOneStep() != "Skip":
-                            # move data to the proper location
-                            if self.envType != "CPU":
-                                if isinstance(data,torch.Tensor):
-                                    data = data.cuda()
-                                elif isinstance(data,list):
-                                    for index in range(len(data)):
-                                        if isinstance(data[index],torch.Tensor):
-                                            data[index] = data[index].cuda()
-                                elif isinstance(data,dict):
-                                    for key in data:
-                                        if isinstance(data[key],torch.Tensor):
-                                            data[key] = data[key].cuda() 
-                            self.model.runOneStep(data,self.logDict,_iter,nowEpoch)
-                        self.lifeCycle.AModelOneStep()
 
-                        # visualize
-                        if self.lifeCycle.needVisualize(nowEpoch,_iter,self.logDict,self.task.args):
-                            if self.envType == "DDP":
-                                if self.rank == 0 and self.lifeCycle.BVisualize() != "Skip":
-                                    self.model.visualize(epoch = nowEpoch, iter = _iter, log = self.logDict)
-                            else:
-                                if self.lifeCycle.BVisualize() != "Skip":
-                                    self.model.visualize(epoch = nowEpoch, iter = _iter, log = self.logDict)
-                            self.lifeCycle.AVisualize()
+                    self.__train_an_epoch(nowEpoch)                    
 
                     if self.envType == "DDP":
                         dist.barrier() # Sync before validation
@@ -86,7 +108,10 @@ class TrainProcess(TaskProcess):
                     # validation
                     if self.lifeCycle.needValidation(self.finishedEpoch,self.logDict,self.task.args):
                         if self.lifeCycle.BValidation() != "Skip":
-                            self.model.validate(self.valLoader,self.logDict)
+                            if "validate" in dir(self.model):
+                                self.model.validate(self.valLoader,self.logDict)
+                            else:
+                                self.__validate()
                         self.lifeCycle.AValidation()
 
                     if self.envType == "DDP":

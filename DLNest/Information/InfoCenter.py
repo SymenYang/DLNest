@@ -90,7 +90,7 @@ class InfoCenter(Singleton):
             finally:
                 self.deviceLock.release()
 
-    def changeDevices(self,newDevicesIDList : [int]):
+    def changeDevices(self,newDevicesIDList : list):
         """
         Modify available devices
         """

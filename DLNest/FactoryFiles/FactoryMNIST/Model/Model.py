@@ -34,23 +34,23 @@ class Model(ModelBaseTorch):
     def visualize(self,epoch : int, iter : int, log : dict):
         if iter % 10 == 0 and iter != 0:
             print("iter",iter,"loss:",sum(log["loss"][-10:]))
-
-    def validate(self,valLoader,log : dict):
-        totalCorrect = 0
-        total = 0
-        for _iter,data in enumerate(valLoader):
-            x,y = data
-            if self._envType != "CPU":
-                x = x.cuda()
-                y = y.cuda()
-            with torch.no_grad():
-                output = self.model(x)
-                _,pred = torch.max(output, 1)
-                correct = (pred == y).sum() / y.shape[0]
-                correct = self._reduceMean(correct)
-                totalCorrect += correct
-                total += 1
-        acc = totalCorrect / total
+    
+    def validationInit(self):
+        self.totalCorrect = 0
+        self.total = 0
+    
+    def validateABatch(self,data, iter : int):
+        x,y = data
+        with torch.no_grad():
+            output = self.model(x)
+            _,pred = torch.max(output, 1)
+            correct = (pred == y).sum() / y.shape[0]
+            correct = self._reduceMean(correct)
+            self.totalCorrect += correct
+            self.total += 1
+    
+    def validationAnalyze(self, log : dict):
+        acc = self.totalCorrect / self.total
         log["acc"].append(acc.item())
         print(acc.item())
         print("validated")

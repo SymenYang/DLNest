@@ -241,25 +241,27 @@ def runOneStep(self,data, log : dict, iter : int, epoch : int):
     log["loss"].append(loss.detach().item())
 ```
 5. visualize函数用来进行可视化，常用的包括使用tensorboard、visdom或直接print来进行
-6. validate函数用来进行验证，每一个epoch结束后被调用一次。其输入包括一个验证集loader和log字典。在这里需要注意的是迭代验证集loader时需要自行加载数据到设备。在使用GPU时训练进程已经设置好了默认的cuda设备，直接调用tensor.cuda()即可。可以是用模型的self._envType来得到运行时的环境种类字符串（CPU、GPU、GPUs、DDP），也可以使用模型的self._reduceMean或self._reduceSum函数来跨进程reduce张量到rank=0的进程。一个常见的实现如下：
+6. validate过程分为三步，分别是`validationInit`、`validateAEpoch`、`validationAnalyze`这三个函数。每个epoch结束之后，会首先调用`validationInit`初始化验证，可以在这个函数中进行记录变量归零等操作。之后调用多次`validateAEpoch`函数直到验证集全部被验证。值得注意的是输入进validateAEpoch的数据已经自动处理到了合适的设备上，不用再进行cuda()。最后调用一次`validationAnalyze`函数，一般用来进行多个batch验证结果的数据整合和log写入。这个过程中可以使用模型的self._reduceMean或self._reduceSum函数来跨进程reduce张量到rank=0的进程。一个常见的实现如下：
 ```python
-def validate(self,valLoader,log : dict):
-    totalCorrect = 0
-    total = 0
-    for _iter,data in enumerate(valLoader): # 迭代验证集
-        x,y = data
-        if self._envType != "CPU": # 若使用GPU，则将数据移到GPU
-            x = x.cuda()
-            y = y.cuda()
-        with torch.no_grad():
-            output = self.model(x) # 使用模型进行推理
-            _,pred = torch.max(output, 1)
-            correct = (pred == y).sum() / y.shape[0] # 得到当前进程的正确率
-            correct = self._reduceMean(correct) # 得到所有进程的正确率平均值
-            totalCorrect += correct # 统计总计正确率
-            total += 1 # 统计step数
-    acc = totalCorrect / total # 得到平均正确率
-    log["acc"].append(acc.item()) # 记录正确率
+def validationInit(self):
+    self.totalCorrect = 0
+    self.total = 0
+ 
+def validateABatch(self,data, iter : int):
+    x,y = data
+    with torch.no_grad():
+        output = self.model(x)
+        _,pred = torch.max(output, 1)
+        correct = (pred == y).sum() / y.shape[0]
+        correct = self._reduceMean(correct)
+        self.totalCorrect += correct
+        self.total += 1
+ 
+def validationAnalyze(self, log : dict):
+    acc = self.totalCorrect / self.total
+    log["acc"].append(acc.item())
+    print(acc.item())
+    print("validated")
 ```
 ## Local 命令
 使用以下命令能够使用Local服务，该启动方式并不需要启动Server，即前端退出时所有的训练也会退出

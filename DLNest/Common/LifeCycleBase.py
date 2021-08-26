@@ -78,6 +78,18 @@ class LifeCycleBase:
     def BValidation(self):
         pass
 
+    def BValidateABatch(self):
+        pass
+
+    def AValidateABatch(self):
+        pass
+
+    def BValidationAnalyze(self):
+        pass
+
+    def AValidationAnalyze(self):
+        pass
+
     def AValidation(self):
         pass
 

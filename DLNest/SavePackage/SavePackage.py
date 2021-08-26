@@ -147,6 +147,9 @@ class SavePackage:
         Make a new save package. If having the override save name, use it. If not, use timestamp to save.
         """
         saveRoot = Path(self.args["save_root"])
+        if not saveRoot.is_absolute():
+            saveRoot = Path(self.args["root_file_path"]) / saveRoot
+            self.args["save_root"] = str(saveRoot)
         nowTime = time.time()
         saveName = ""
         if overrideSaveName != "":
@@ -327,17 +330,3 @@ class SavePackage:
                 popList.append(key)
         for item in popList:
             self.ckpts.pop(item)
-
-if __name__ == "__main__":
-    # SP = SavePackage("/root/code/DLNestTest/root_config.json")
-    # SP.saveToNewDir(overrideSaveName="Some Description")
-    # SP.saveVisualString("loss 0.0001")
-    # for i in range(100):
-    #     hold = True if i == 49 else False
-    #     SP.saveACheckpoint({},hold)
-    SP = SavePackage()
-    SP.initFromAnExistSavePackage("/root/code/DLNestTest/Saves/2021-03-29_15-33-35_437")
-    print(SP.ckptSlow)
-    print(SP.ckptFast)
-    print(SP.ckptConsistent)
-    print(SP.ckpts)
