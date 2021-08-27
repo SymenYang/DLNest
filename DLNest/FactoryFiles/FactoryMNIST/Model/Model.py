@@ -32,8 +32,7 @@ class Model(ModelBaseTorch):
         log["loss"].append(loss.detach().item())
 
     def visualize(self,epoch : int, iter : int, log : dict):
-        if iter % 10 == 0 and iter != 0:
-            print("iter",iter,"loss:",sum(log["loss"][-10:]))
+        pass
     
     def validationInit(self):
         self.totalCorrect = 0
@@ -52,5 +51,3 @@ class Model(ModelBaseTorch):
     def validationAnalyze(self, log : dict):
         acc = self.totalCorrect / self.total
         log["acc"].append(acc.item())
-        print(acc.item())
-        print("validated")

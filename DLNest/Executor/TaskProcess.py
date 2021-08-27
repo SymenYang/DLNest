@@ -49,28 +49,47 @@ class TaskProcess(Process):
     def __initLifeCycle(self,rank : int = -1):
         lifeCycleName = self.task.args['life_cycle_name']
         if lifeCycleName in dir(self.lifeCycleModule):
-            self.lifeCycle = self.lifeCycleModule.__getattribute__(lifeCycleName)(taskProcess = self,rank = rank)
+            self.lifeCycle = self.lifeCycleModule.__getattribute__(lifeCycleName)(taskProcess = self,rank = rank, plugins = self.plugins)
             if self.task.loadCkpt:
-                self.lifeCycle.loadSaveDict(self.stateDict["life_cycle"])
+                self.lifeCycle._loadSaveDict(self.stateDict["life_cycle"])
         else:
             raise Exception("Cannot find lifeCycle class")
+
+    def __loadAPlugin(self,pluginName : str):
+        pluginPath = Path(__file__).parent.parent / "Plugins" / (pluginName + '.py')
+        tmpPath = Path(pluginName)
+        if tmpPath.is_absolute():
+            pluginPath = tmpPath
+            pluginName = tmpPath.name
+        pluginModule = self.__loadAModule(filePath = pluginPath,name = pluginName)
+        pluginClass = pluginModule.__getattribute__("DLNestPlugin")
+        return pluginClass
+
+    def __loadPlugins(self):
+        if not "plugins" in self.task.args:
+            return []
+        pluginNames = self.task.args["plugins"]
+        pluginList = []
+        for name in pluginNames:
+            pluginList.append(self.__loadAPlugin(name))
+        self.plugins = pluginList
 
     def __loadModelAndDataset(self):
         modelPath = Path(self.task.args["model_file_path"])
         datasetPath = Path(self.task.args["dataset_file_path"])
         self.modelModule = self.__loadAModule(modelPath,modelPath.stem)
         self.datasetModule = self.__loadAModule(datasetPath,datasetPath.stem)
-        sys.modules[datasetPath.stem] = self.datasetModule
+        sys.modules[datasetPath.stem] = self.datasetModule # Why?
 
     def __initDataset(self):
         datasetName = self.task.args['dataset_name']
         if datasetName in dir(self.datasetModule):
             datasetClass = self.datasetModule.__getattribute__(datasetName)
-            self.dataset = datasetClass(_envType = self.envType)
-            self.datasetInfo,self.trainLoader,self.valLoader = self.dataset.init(self.task.args)
+            self.dataset = datasetClass(_envType = self.envType,plugins = self.plugins)
+            self.datasetInfo,self.trainLoader,self.valLoader = self.dataset._datasetInit(self.task.args)
             # load from ckpt is needed.
             if self.task.loadCkpt:
-                self.dataset.loadSaveDict(self.stateDict["dataset"])
+                self.dataset._loadSaveDict(self.stateDict["dataset"])
         else:
             raise Exception("Cannot find dataset class")
 
@@ -78,21 +97,21 @@ class TaskProcess(Process):
         modelName = self.task.args['model_name']
         if modelName in dir(self.modelModule):
             modelClass = self.modelModule.__getattribute__(modelName)
-            self.model = modelClass(_envType = self.envType,rank = self.rank,worldSize = self.worldSize)
-            self.model.init(self.task.args,self.datasetInfo)
+            self.model = modelClass(_envType = self.envType,rank = self.rank,worldSize = self.worldSize, plugins = self.plugins)
+            self.model._modelInit(self.task.args,self.datasetInfo)
             if self.envType != "DDP":
-                self.model.initOptimizer()
+                self.model._initOptimizer()
             else:
                 self.model.DDPOperation(rank = self.rank)
-                self.model.initOptimizer()
+                self.model._initOptimizer()
                 self.model.afterDDP(rank = self.rank)
 
             # load from ckpt is needed.
             if self.task.loadCkpt:
-                self.model.loadSaveDict(self.stateDict["model"])
+                self.model._loadSaveDict(self.stateDict["model"])
             else:
                 # if load from ckpt, logDict has been loaded in self.loadCkpt
-                self.logDict = self.model.initLog()
+                self.logDict = self.model._initLog()
 
     def checkDeviceEnviroment(self):
         """
@@ -148,7 +167,7 @@ class TaskProcess(Process):
             dist.barrier() # start together
             self.mainLoop()
 
-        self.lifeCycle.AAll()
+        self.lifeCycle._AAll()
         dist.destroy_process_group()
         exit(0)
 
@@ -185,9 +204,9 @@ class TaskProcess(Process):
         Save the states of life cycle, dataset and model.
         """
         stateDict = {}
-        stateDict["life_cycle"] = self.lifeCycle.getSaveDict()
-        stateDict["dataset"] = self.dataset.getSaveDict()
-        stateDict["model"] = self.model.getSaveDict()
+        stateDict["life_cycle"] = self.lifeCycle._getSaveDict()
+        stateDict["dataset"] = self.dataset._getSaveDict()
+        stateDict["model"] = self.model._getSaveDict()
         stateDict["log_dict"] = self.logDict
         stateDict["finished_epoch"] = self.finishedEpoch
         for key in otherDict:
@@ -199,20 +218,21 @@ class TaskProcess(Process):
         Init all modules
         """
         self.__loadLifeCycle()
+        self.__loadPlugins()
         self.__initLifeCycle(rank = rank)
 
         self.__loadModelAndDataset()
 
-        if self.lifeCycle.BAll() != "Skip":
-            if self.lifeCycle.BDatasetInit() != "Skip":
+        if self.lifeCycle._BAll() != "Skip":
+            if self.lifeCycle._BDatasetInit() != "Skip":
                 self.__initDataset()
-                self.lifeCycle.dataset = self.dataset
-            self.lifeCycle.ADatasetInit()
+                self.lifeCycle._dataset = self.dataset
+            self.lifeCycle._ADatasetInit()
         
-            if self.lifeCycle.BModelInit() != "Skip":
+            if self.lifeCycle._BModelInit() != "Skip":
                 self.__initModel()
                 self.lifeCycle.model = self.model
-            self.lifeCycle.AModelInit()
+            self.lifeCycle._AModelInit()
             return
         else:
             return "Skip"
@@ -236,4 +256,4 @@ class TaskProcess(Process):
             self.loadCkpt()
             if self.initModules() != "Skip":
                 self.mainLoop()
-            self.lifeCycle.AAll()
+            self.lifeCycle._AAll()

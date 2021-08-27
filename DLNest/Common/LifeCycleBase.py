@@ -1,15 +1,32 @@
 from abc import ABCMeta, abstractmethod
-from .DatasetBase import DatasetBase
-from .ModelBase import ModelBase
+try:
+    from .DatasetBase import DatasetBase
+    from .ModelBase import ModelBase
+except ImportError:
+    from DLNest.Common.DatasetBase import DatasetBase
+    from DLNest.Common.ModelBase import ModelBase
 import traceback
+from functools import wraps
 
 class LifeCycleBase:
-    def __init__(self,model : ModelBase = None,dataset : DatasetBase = None, taskProcess = None, rank : int = -1):
+    def __init__(self,model : ModelBase = None,dataset : DatasetBase = None, taskProcess = None, rank : int = -1, plugins : list = []):
         self.model = model
         self.dataset = dataset
         self.taskProcess = taskProcess
         self.rank = rank
+        self._plugins = plugins
     
+    def checkPlugins(func):
+        #@wraps(func)
+        def checkAndRun(*args, **kwargs):
+            name = func.__name__
+            for plugin in args[0]._plugins:
+                if name[1:] in dir(plugin):
+                    getattr(plugin,name[1:])(*args, **kwargs)
+            return func(*args, **kwargs)
+        
+        return checkAndRun
+
     def BAll(self):
         pass
 
@@ -123,5 +140,133 @@ class LifeCycleBase:
     def AAll(self):
         pass
 
-    def TrainAborting(self,exception : Exception):
+    def trainAborting(self,exception : Exception):
         traceback.print_exc()
+
+    @checkPlugins
+    def _BAll(self):
+        return self.BAll()
+
+    @checkPlugins
+    def _BDatasetInit(self):
+        return self.BDatasetInit()
+
+    @checkPlugins
+    def _ADatasetInit(self):
+        return self.ADatasetInit()
+
+    @checkPlugins
+    def _BModelInit(self):
+        return self.BModelInit()
+
+    @checkPlugins
+    def _AModelInit(self):
+        return self.AModelInit()
+
+    @checkPlugins
+    def _BTrain(self):
+        return self.BTrain()
+
+    @checkPlugins
+    def _ATrain(self):
+        return self.ATrain()
+
+    @checkPlugins
+    def _BOneEpoch(self):
+        return self.BOneEpoch()
+
+    @checkPlugins
+    def _AOneEpoch(self):
+        return self.AOneEpoch()
+
+    @checkPlugins
+    def _BGetCommand(self):
+        return self.BGetCommand()
+
+    @checkPlugins
+    def _AGetCommand(self,command):
+        return self.AGetCommand(command = command)
+
+    @checkPlugins
+    def _BSuspend(self):
+        return self.BSuspend()
+
+    @checkPlugins
+    def _ASuspend(self):
+        return self.ASuspend()
+
+    @checkPlugins
+    def _BLoadFromSuspend(self):
+        return self.BLoadFromSuspend()
+
+    @checkPlugins
+    def _ALoadFromSuspend(self):
+        return self.ALoadFromSuspend()
+
+    @checkPlugins
+    def _BModelOneStep(self):
+        return self.BModelOneStep()
+
+    @checkPlugins
+    def _AModelOneStep(self):
+        return self.AModelOneStep()
+
+    @checkPlugins
+    def _BVisualize(self):
+        return self.BVisualize()
+
+    @checkPlugins
+    def _AVisualize(self):
+        return self.AVisualize()
+
+    @checkPlugins
+    def _BValidation(self):
+        return self.BValidation()
+    
+    @checkPlugins
+    def _BValidateABatch(self):
+        return self.BValidateABatch()
+    
+    @checkPlugins
+    def _AValidateABatch(self):
+        return self.AValidateABatch()
+    
+    @checkPlugins
+    def _BValidationAnalyze(self):
+        return self.BValidationAnalyze()
+    
+    @checkPlugins
+    def _AValidationAnalyze(self):
+        return self.AValidationAnalyze()
+    
+    @checkPlugins
+    def _AValidation(self):
+        return self.AValidation()
+    
+    @checkPlugins
+    def _commandLineOutput(self,epoch : int, logdict : dict, args : dict):
+        return self.commandLineOutput(epoch = epoch, logdict = logdict, args = args)
+    
+    @checkPlugins
+    def _BSaveModel(self):
+        return self.BSaveModel()
+    
+    @checkPlugins
+    def _ASaveModel(self):
+        return self.ASaveModel()
+
+    @checkPlugins    
+    def _getSaveDict(self):
+        return self.getSaveDict()
+    
+    @checkPlugins
+    def _loadSaveDict(self,saveDict):
+        return self.loadSaveDict()
+
+    @checkPlugins
+    def _AAll(self):
+        return self.AAll()
+
+    @checkPlugins
+    def _trainAborting(self,exception : Exception):
+        return self.trainAborting(exception = exception)

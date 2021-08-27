@@ -57,42 +57,42 @@ class TrainProcess(TaskProcess):
         nowEpoch = start_epoch
         for _iter,data in enumerate(self.trainLoader):
             # run one step
-            if self.lifeCycle.BModelOneStep() != "Skip":
+            if self.lifeCycle._BModelOneStep() != "Skip":
                 data = self.__moveData(data)
-                self.model.runOneStep(data,self.logDict,_iter,nowEpoch)
-            self.lifeCycle.AModelOneStep()
+                self.model._runOneStep(data,self.logDict,_iter,nowEpoch)
+            self.lifeCycle._AModelOneStep()
 
             # visualize
             if self.lifeCycle.needVisualize(nowEpoch,_iter,self.logDict,self.task.args):
                 if self.envType == "DDP":
-                    if self.rank == 0 and self.lifeCycle.BVisualize() != "Skip":
-                        self.model.visualize(epoch = nowEpoch, iter = _iter, log = self.logDict)
+                    if self.rank == 0 and self.lifeCycle._BVisualize() != "Skip":
+                        self.model._visualize(epoch = nowEpoch, iter = _iter, log = self.logDict)
                 else:
-                    if self.lifeCycle.BVisualize() != "Skip":
-                        self.model.visualize(epoch = nowEpoch, iter = _iter, log = self.logDict)
-                self.lifeCycle.AVisualize()
+                    if self.lifeCycle._BVisualize() != "Skip":
+                        self.model._visualize(epoch = nowEpoch, iter = _iter, log = self.logDict)
+                self.lifeCycle._AVisualize()
 
 
     def __validate(self):
-        self.model.validationInit()
+        self.model._validationInit()
         for _iter,data in enumerate(self.valLoader):
-            if self.lifeCycle.BValidateABatch() != "Skip":
+            if self.lifeCycle._BValidateABatch() != "Skip":
                 data = self.__moveData(data)
-                self.model.validateABatch(data,_iter)
-            self.lifeCycle.AValidateABatch()
+                self.model._validateABatch(data,_iter)
+            self.lifeCycle._AValidateABatch()
         
-        if self.lifeCycle.BValidationAnalyze() != "Skip":
-            self.model.validationAnalyze(self.logDict)
-        self.lifeCycle.AValidationAnalyze()
+        if self.lifeCycle._BValidationAnalyze() != "Skip":
+            self.model._validationAnalyze(self.logDict)
+        self.lifeCycle._AValidationAnalyze()
 
     def mainLoop(self):
         try:
             nowEpoch = self.finishedEpoch + 1
-            if self.lifeCycle.BTrain() == "Skip":
-                self.lifeCycle.ATrain()
+            if self.lifeCycle._BTrain() == "Skip":
+                self.lifeCycle._ATrain()
                 return
             while True:
-                if self.lifeCycle.BOneEpoch() != "Skip":
+                if self.lifeCycle._BOneEpoch() != "Skip":
                     if self.envType == "DDP":
                         self.trainLoader.sampler.set_epoch(nowEpoch)
 
@@ -103,42 +103,42 @@ class TrainProcess(TaskProcess):
 
                     self.finishedEpoch = nowEpoch
                     # output in command Line
-                    self.lifeCycle.commandLineOutput(self.finishedEpoch,self.logDict,self.task.args)
+                    self.lifeCycle._commandLineOutput(self.finishedEpoch,self.logDict,self.task.args)
 
                     # validation
                     if self.lifeCycle.needValidation(self.finishedEpoch,self.logDict,self.task.args):
-                        if self.lifeCycle.BValidation() != "Skip":
+                        if self.lifeCycle._BValidation() != "Skip":
                             if "validate" in dir(self.model):
-                                self.model.validate(self.valLoader,self.logDict)
+                                self.model._validate(self.valLoader,self.logDict)
                             else:
                                 self.__validate()
-                        self.lifeCycle.AValidation()
+                        self.lifeCycle._AValidation()
 
                     if self.envType == "DDP":
                         dist.barrier() # Sync before saving
 
                     #save checkpoint
                     if self.envType == "DDP":
-                        if self.rank == 0 and self.lifeCycle.BSaveModel() != "Skip":
+                        if self.rank == 0 and self.lifeCycle._BSaveModel() != "Skip":
                             if self.lifeCycle.needSaveModel(self.finishedEpoch,self.logDict,self.task.args):
                                 self.__saveModel()
                     else:
-                        if self.lifeCycle.BSaveModel() != "Skip":
+                        if self.lifeCycle._BSaveModel() != "Skip":
                             if self.lifeCycle.needSaveModel(self.finishedEpoch,self.logDict,self.task.args):
                                 self.__saveModel()
-                    self.lifeCycle.ASaveModel()
+                    self.lifeCycle._ASaveModel()
 
-                self.lifeCycle.AOneEpoch()
+                self.lifeCycle._AOneEpoch()
                  # break decision
                 if self.lifeCycle.needContinueTrain(self.finishedEpoch,self.logDict,self.task.args):
                     nowEpoch = self.finishedEpoch + 1
                 else:
                     break
         except Exception as e:
-            self.lifeCycle.TrainAborting(e)
+            self.lifeCycle._trainAborting(e)
         
         # After Train
-        self.lifeCycle.ATrain()
+        self.lifeCycle._ATrain()
 
     def loadCkpt(self):
         super().loadCkpt()

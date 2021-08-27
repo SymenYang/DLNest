@@ -5,8 +5,8 @@ from .ModelBase import ModelBase
 from abc import ABCMeta, abstractmethod
 
 class ModelBaseTorch(ModelBase):
-    def __init__(self,_envType : str,rank = -1,worldSize = -1):
-        super(ModelBaseTorch,self).__init__(_envType = _envType,rank = rank,worldSize = worldSize)
+    def __init__(self,_envType : str,rank = -1,worldSize = -1, plugins = []):
+        super(ModelBaseTorch,self).__init__(_envType = _envType,rank = rank,worldSize = worldSize, plugins = plugins)
         self.__modelList = []
     
     def DDPOperation(self,rank : int):

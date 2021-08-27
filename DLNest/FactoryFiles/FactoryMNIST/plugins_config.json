@@ -1,0 +1,20 @@
+{
+    "plugins" : [
+        "LogInit",
+        "AutoTensorboardScalar",
+        "SimpleCMDVisualize"
+    ],
+    "plugins_config" : {
+        "SimpleCMDVisualize" : {
+            "stride" : 10,
+            "keys" : ["loss","acc"],
+            "format" : {
+                "loss" : "\t| {} : {:.6f}",
+                "acc" : "\t| {} : {:.6f}"
+            }
+        },
+        "LogInit" : {
+            "level" : "INFO"
+        }
+    }
+}

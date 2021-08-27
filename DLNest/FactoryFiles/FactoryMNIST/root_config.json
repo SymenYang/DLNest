@@ -17,6 +17,7 @@
     "child_jsons":[
         "./common_config.json",
         "./model_config.json",
-        "./dataset_config.json"
+        "./dataset_config.json",
+        "./plugins_config.json"
     ]
 }

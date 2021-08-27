@@ -16,6 +16,7 @@
     "other_file_paths":[],
     "child_jsons":[
         "./model_config.json",
-        "./dataset_config.json"
+        "./dataset_config.json",
+        "./plugins_config.json"
     ]
 }
