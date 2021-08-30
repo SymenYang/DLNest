@@ -1,6 +1,6 @@
-from DLNest.Common.ModelBase import ModelBase
+from DLNest.Common.RunnerBase import RunnerBase
 
-class Model(ModelBase):
+class Runner(RunnerBase):
     def init(self,args : dict,datasetInfo : dict = None):
         #Init models
         pass

@@ -9,10 +9,10 @@ import os
 import time
 from multiprocessing import Pipe
 
-class AnalyzeRunner:
-    def __init__(self,args : dict, model , dataset, log : dict):
+class AnalyzeWrapper:
+    def __init__(self,args : dict, runner , dataset, log : dict):
         self.args = args
-        self.model = model
+        self.runner = runner
         self.dataset = dataset
         self.log = log
 
@@ -35,10 +35,10 @@ class AnalyzeProcess(TaskProcess):
             self.output.isSend = True
 
     def runExp(self):
-        self.expFunc(self.runner)
+        self.expFunc(self.analyzeWrapper)
 
     def mainLoop(self):
-        self.runner = AnalyzeRunner(self.task.args,self.model,self.dataset,self.logDict)
+        self.analyzeWrapper = AnalyzeWrapper(self.task.args,self.runner,self.dataset,self.logDict)
         if self.expFunc != None:
             # Have a setted exp to run
             self.runExp()
@@ -83,24 +83,3 @@ class AnalyzeProcess(TaskProcess):
         finally:
             if self.output != None:
                 self.output.appName = "DLNest Analyze Process"
-
-def test(self):
-    print(self.args,self.model,self.dataset)
-    for i in range(10):
-        print(i)
-        time.sleep(1)
-
-if __name__ == "__main__":
-    AB = AnalyzerBuffer()
-    AT = AnalyzeTask("/root/code/DLNestTest/Saves/NOSAVE",3,devices = [-1])
-    AP = AnalyzeProcess(AT,outputBuffer = AB)#,expFunc = test)
-    #AP = AnalyzeProcess(AT,outputBuffer = None,expFunc = test)
-    AP.start()
-    lastItem = ""
-    time.sleep(10)
-    AT.commandQueue.put("test2")
-    while True:
-        now = AB.getPlainText()[1]
-        if now != lastItem:
-            print(now)
-            lastItem = now

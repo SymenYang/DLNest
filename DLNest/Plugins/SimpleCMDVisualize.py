@@ -10,7 +10,7 @@ class DLNestPlugin(DPB):
     }
     _defaultKeys = ["stride", "keys", "format"]
 
-    def modelInit(self,args : dict, datasetInfo : dict = None):
+    def runnerInit(self,args : dict, datasetInfo : dict = None):
         pluginName = "SimpleCMDVisualize"
         self._visualStride = DPB.getArgs(self, pluginName, "stride", 1)
         self._visualKeys = DPB.getArgs(self, pluginName, "keys" , [])

@@ -59,30 +59,30 @@ class TrainProcess(TaskProcess):
             # run one step
             if self.lifeCycle._BModelOneStep() != "Skip":
                 data = self.__moveData(data)
-                self.model._runOneStep(data,self.logDict,_iter,nowEpoch)
+                self.runner._runOneStep(data,self.logDict,_iter,nowEpoch)
             self.lifeCycle._AModelOneStep()
 
             # visualize
             if self.lifeCycle.needVisualize(nowEpoch,_iter,self.logDict,self.task.args):
                 if self.envType == "DDP":
                     if self.rank == 0 and self.lifeCycle._BVisualize() != "Skip":
-                        self.model._visualize(epoch = nowEpoch, iter = _iter, log = self.logDict)
+                        self.runner._visualize(epoch = nowEpoch, iter = _iter, log = self.logDict)
                 else:
                     if self.lifeCycle._BVisualize() != "Skip":
-                        self.model._visualize(epoch = nowEpoch, iter = _iter, log = self.logDict)
+                        self.runner._visualize(epoch = nowEpoch, iter = _iter, log = self.logDict)
                 self.lifeCycle._AVisualize()
 
 
     def __validate(self):
-        self.model._validationInit()
+        self.runner._validationInit()
         for _iter,data in enumerate(self.valLoader):
             if self.lifeCycle._BValidateABatch() != "Skip":
                 data = self.__moveData(data)
-                self.model._validateABatch(data,_iter)
+                self.runner._validateABatch(data,_iter)
             self.lifeCycle._AValidateABatch()
         
         if self.lifeCycle._BValidationAnalyze() != "Skip":
-            self.model._validationAnalyze(self.logDict)
+            self.runner._validationAnalyze(self.logDict)
         self.lifeCycle._AValidationAnalyze()
 
     def mainLoop(self):
@@ -108,8 +108,8 @@ class TrainProcess(TaskProcess):
                     # validation
                     if self.lifeCycle.needValidation(self.finishedEpoch,self.logDict,self.task.args):
                         if self.lifeCycle._BValidation() != "Skip":
-                            if "validate" in dir(self.model):
-                                self.model._validate(self.valLoader,self.logDict)
+                            if "validate" in dir(self.runner):
+                                self.runner._validate(self.valLoader,self.logDict)
                             else:
                                 self.__validate()
                         self.lifeCycle._AValidation()

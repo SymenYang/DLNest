@@ -74,10 +74,10 @@ class TaskProcess(Process):
             pluginList.append(self.__loadAPlugin(name))
         self.plugins = pluginList
 
-    def __loadModelAndDataset(self):
-        modelPath = Path(self.task.args["model_file_path"])
+    def __loadRunnerAndDataset(self):
+        runnerPath = Path(self.task.args["runner_file_path"] if "runner_file_path" in self.task.args else self.task.args["model_file_path"]) # need to be deprecated
         datasetPath = Path(self.task.args["dataset_file_path"])
-        self.modelModule = self.__loadAModule(modelPath,modelPath.stem)
+        self.runnerModule = self.__loadAModule(runnerPath,runnerPath.stem)
         self.datasetModule = self.__loadAModule(datasetPath,datasetPath.stem)
         sys.modules[datasetPath.stem] = self.datasetModule # Why?
 
@@ -93,25 +93,25 @@ class TaskProcess(Process):
         else:
             raise Exception("Cannot find dataset class")
 
-    def __initModel(self):
-        modelName = self.task.args['model_name']
-        if modelName in dir(self.modelModule):
-            modelClass = self.modelModule.__getattribute__(modelName)
-            self.model = modelClass(_envType = self.envType,args = self.task.args, rank = self.rank,worldSize = self.worldSize, plugins = self.plugins)
-            self.model._modelInit(self.task.args,self.datasetInfo)
+    def __initRunner(self):
+        runnerName = self.task.args['runner_name'] if "runner_name" in self.task.args else self.task.args["model_name"] # need to be deprecated
+        if runnerName in dir(self.runnerModule):
+            runnerClass = self.runnerModule.__getattribute__(runnerName)
+            self.runner = runnerClass(_envType = self.envType,args = self.task.args, rank = self.rank,worldSize = self.worldSize, plugins = self.plugins)
+            self.runner._runnerInit(self.task.args,self.datasetInfo)
             if self.envType != "DDP":
-                self.model._initOptimizer()
+                self.runner._initOptimizer()
             else:
-                self.model.DDPOperation(rank = self.rank)
-                self.model._initOptimizer()
-                self.model.afterDDP(rank = self.rank)
+                self.runner.DDPOperation(rank = self.rank)
+                self.runner._initOptimizer()
+                self.runner.afterDDP(rank = self.rank)
 
             # load from ckpt is needed.
             if self.task.loadCkpt:
-                self.model._loadSaveDict(self.stateDict["model"])
+                self.runner._loadSaveDict(self.stateDict["runner"])
             else:
                 # if load from ckpt, logDict has been loaded in self.loadCkpt
-                self.logDict = self.model._initLog()
+                self.logDict = self.runner._initLog()
 
     def checkDeviceEnviroment(self):
         """
@@ -201,12 +201,12 @@ class TaskProcess(Process):
 
     def saveCkpt(self,otherDict : dict = {}, holdThisCheckpoint = False):
         """
-        Save the states of life cycle, dataset and model.
+        Save the states of life cycle, dataset and runner.
         """
         stateDict = {}
         stateDict["life_cycle"] = self.lifeCycle._getSaveDict()
         stateDict["dataset"] = self.dataset._getSaveDict()
-        stateDict["model"] = self.model._getSaveDict()
+        stateDict["runner"] = self.runner._getSaveDict()
         stateDict["log_dict"] = self.logDict
         stateDict["finished_epoch"] = self.finishedEpoch
         for key in otherDict:
@@ -221,7 +221,7 @@ class TaskProcess(Process):
         self.__loadPlugins()
         self.__initLifeCycle(rank = rank)
 
-        self.__loadModelAndDataset()
+        self.__loadRunnerAndDataset()
 
         if self.lifeCycle._BAll() != "Skip":
             if self.lifeCycle._BDatasetInit() != "Skip":
@@ -230,8 +230,8 @@ class TaskProcess(Process):
             self.lifeCycle._ADatasetInit()
         
             if self.lifeCycle._BModelInit() != "Skip":
-                self.__initModel()
-                self.lifeCycle.model = self.model
+                self.__initRunner()
+                self.lifeCycle.runner = self.runner
             self.lifeCycle._AModelInit()
             return
         else:

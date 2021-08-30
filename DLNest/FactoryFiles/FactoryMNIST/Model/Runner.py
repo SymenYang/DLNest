@@ -1,10 +1,10 @@
-from DLNest.Common.ModelBaseTorch import ModelBaseTorch
+from DLNest.Common.RunnerBaseTorch import RunnerBaseTorch
 
 import torch
 import torch.nn as nn
 from MNISTCNN import MNISTModel
 
-class Model(ModelBaseTorch):
+class Runner(RunnerBaseTorch):
     def init(self,args : dict,datasetInfo : dict = None):
         model = MNISTModel(args)
         self.model = self.register(model,syncBN=True) # But no BN

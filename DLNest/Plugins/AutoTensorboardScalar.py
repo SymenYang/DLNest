@@ -6,7 +6,7 @@ class DLNestPlugin(DPB):
     _NAME = "AutoTensorboardScalar"
     _config = {}
     _defaultKeys = []
-    def modelInit(self,args : dict, datasetInfo : dict = None):
+    def runnerInit(self,args : dict, datasetInfo : dict = None):
         if self._rank == -1 or self._rank == 0:
             self.writer = SummaryWriter(".")
         logging.debug("[AutoTensorboardScalar] Finish modelInit")

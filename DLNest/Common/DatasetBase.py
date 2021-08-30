@@ -24,7 +24,7 @@ class DatasetBase:
         input:
             args : dict
         output:
-            dict to model
+            dict to runner
             train loader
             val loader
         """

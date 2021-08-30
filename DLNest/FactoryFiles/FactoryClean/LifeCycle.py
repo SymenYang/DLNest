@@ -1,5 +1,5 @@
 from DLNest.Common.DatasetBase import DatasetBase
-from DLNest.Common.ModelBase import ModelBase
+from DLNest.Common.RunnerBase import RunnerBase
 from DLNest.Common.LifeCycleBase import LifeCycleBase
 
 

@@ -1,6 +1,6 @@
 {
     "save_root":"./Saves",
-    "model_name":"Model",
+    "runner_name":"Runner",
     "dataset_name":"MNISTDataset",
     "life_cycle_name":"LifeCycle",
     "checkpoint_args":{
@@ -10,7 +10,7 @@
         "max_ckpt_in_consistent_track":1
     },
     "root_file_path":"",
-    "model_file_path":"./Model/Model.py",
+    "runner_file_path":"./Model/Runner.py",
     "dataset_file_path":"./Dataset/Dataset.py",
     "life_cycle_file_path":"./LifeCycle.py",
     "other_file_paths":[],

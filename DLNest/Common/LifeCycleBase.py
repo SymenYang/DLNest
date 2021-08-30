@@ -1,18 +1,18 @@
 from abc import ABCMeta, abstractmethod
 try:
     from .DatasetBase import DatasetBase
-    from .ModelBase import ModelBase
+    from .RunnerBase import RunnerBase
 except ImportError:
     from DLNest.Common.DatasetBase import DatasetBase
-    from DLNest.Common.ModelBase import ModelBase
+    from DLNest.Common.RunnerBase import RunnerBase
 from DLNest.Plugins.Utils.CheckPlugins import checkPlugins
 import traceback
 from functools import wraps
 import logging
 
 class LifeCycleBase:
-    def __init__(self,model : ModelBase = None,dataset : DatasetBase = None, taskProcess = None, rank : int = -1, plugins : list = []):
-        self.model = model
+    def __init__(self,runner : RunnerBase = None,dataset : DatasetBase = None, taskProcess = None, rank : int = -1, plugins : list = []):
+        self.runner = runner
         self.dataset = dataset
         self.taskProcess = taskProcess
         self.rank = rank

@@ -170,7 +170,7 @@ class SavePackage:
 
         # copy python files into dir if copy Files is TRUE
         if copyFiles:
-            self.__copyAFile(Path(self.args["model_file_path"]),saveDir)
+            self.__copyAFile(Path(self.args["runner_file_path"] if "runner_file_path" in self.args else self.args["model_file_path"]),saveDir) # need to be deprecated
             self.__copyAFile(Path(self.args["dataset_file_path"]),saveDir)
             self.__copyAFile(Path(self.args["life_cycle_file_path"]),saveDir)
             for item in self.args["other_file_paths"]:
