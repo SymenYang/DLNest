@@ -173,9 +173,16 @@ def getCommandCompleter():
         },
         "new" : {
             "-d" : PartPathCompleter(),
+            "-MNIST" : None,
+            "-p" : None,
         },
         "changeDevices" : {
             "-d" : None
+        },
+        "addP" : {
+            "-d" : PartPathCompleter(),
+            "-p" : None,
+            "-F" : None,
         },
         "changeDelay" : None,
         "runExp" : None,

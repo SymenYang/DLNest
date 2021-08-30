@@ -35,6 +35,7 @@ class ProjectArguments(Arguments):
 
         self._parser.add_argument("-d",type=str, help="Path to the directory you want to create the project.", required = True)
         self._parser.add_argument("-MNIST",action='store_true', help="Set to new a project with MNIST task.")
+        self._parser.add_argument("-p", type = str, nargs='+', help = "Set plugins need to be used.")
 
 class AnalyzeArguments(Arguments):
     def __init__(self):
@@ -69,6 +70,14 @@ class OutputArguments(Arguments):
         self._parser.add_argument("-t",type=str, default = "", help="task ID")
         self._parser.add_argument("-s",action="store_true",help = "set to get styled")
 
+class AddPluginsArguents(Arguments):
+    def __init__(self):
+        super(AddPluginsArguents, self).__init__(desc="Arguments for add plugins.")
+
+        self._parser.add_argument("-d", type=str, help="Path to the directory you want to create the project.", required = True)
+        self._parser.add_argument("-p", type = str, nargs='+', help = "Set plugins need to be used.",required = True)
+        self._parser.add_argument("-F", action='store_true', help="Set to use full config")
+
 def stableRun(f):
     wraps(f)
     def doStableRun(*args, **kwargs):
@@ -87,6 +96,7 @@ class Communicator:
         self.analyzeArgParser = AnalyzeArguments()
         self.deviceChangeArgParser = DeviceChangeArguments()
         self.outputArgParser = OutputArguments()
+        self.addPluginsArgParser = AddPluginsArguents()
         self.url = "http://" + url + ":" + str(port)
 
     def shortenList(self,commandWordList : list):
@@ -139,7 +149,8 @@ class Communicator:
         args,otherArgs = self.projectArgParser.parser().parse_known_args(commandWordList[1:])
         r = requests.post(self.url + "/new_proj",{
             "target_dir" : args.d,
-            "MNIST" : args.MNIST
+            "MNIST" : args.MNIST,
+            "plugins" : args.p
         })
         return json.loads(r.text)
 
@@ -238,6 +249,17 @@ class Communicator:
         r = requests.post(self.url + "/clear",{})
         return json.loads(r.text)
 
+    @stableRun
+    def addPlugins(self, commandWordList : list):
+        commandWordList = self.shortenList(commandWordList)
+        args, otherArgs = self.addPluginsArgParser.parser().parse_known_args(commandWordList[1:])
+        r = requests.post(self.url + "/add_plugins", {
+            "target_dir" : args.d,
+            "plugins" : args.p,
+            "full" : args.F
+        })
+        return json.loads(r.text)
+
     def giveACommand(self, commandWordList : list):
         if commandWordList[0] == "run":
             return self.runTrain(commandWordList)
@@ -263,6 +285,8 @@ class Communicator:
             return self.changeDevices(commandWordList)
         elif commandWordList[0] == "clear":
             return self.clear()
+        elif commandWordList[0] == "addP":
+            return self.addPlugins(commandWordList)
         elif commandWordList[0] == "exit":
             return {"exit" : True}
         else:

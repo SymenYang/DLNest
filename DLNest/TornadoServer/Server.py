@@ -17,12 +17,14 @@ from DLNest.Operations.New import new
 from DLNest.Operations.Run import run
 from DLNest.Operations.RunExp import runExp
 from DLNest.Operations.SafeExit import safeExit
+from DLNest.Operations.UsePlugin import usePlugins
 
 from DLNest.Output.DLNestBuffer import DLNestBuffer
 
 import sys
 import traceback
 from threading import Lock
+import logging
 
 class DLNestServer:
     def __init__(self):
@@ -34,6 +36,7 @@ class DLNestServer:
         self.app = tornado.web.Application(
             [
                 (r'/analyze',AnalyzeHandler,{"outputBuffer" : self.outputBuffer, "lock" : self.singleLock}),
+                (r'/add_plugins', AddPluginsHandler,{"outputBuffer" : self.outputBuffer, "lock" : self.singleLock}),
                 (r'/change_delay',ChangeDelayHandler,{"outputBuffer" : self.outputBuffer, "lock" : self.singleLock}),
                 (r'/change_devices',ChangeDevicesHandler,{"outputBuffer" : self.outputBuffer, "lock" : self.singleLock}),
                 (r'/change_max_task_per_device',ChangeMaxTaskPerDeviceHandler,{"outputBuffer" : self.outputBuffer, "lock" : self.singleLock}),
@@ -59,7 +62,6 @@ class DLNestHandler(tornado.web.RequestHandler):
     def initialize(self,outputBuffer : DLNestBuffer, lock : Lock):
         self.lock = lock
         self.outputBuffer = outputBuffer
-        self.DEBUG = False
     
     def beforeExec(self,appName : str = "DLNest"):
         if self.lock.acquire():
@@ -105,8 +107,7 @@ class AnalyzeHandler(DLNestHandler):
             traceback.print_exc()
         finally:
             self.afterExec()
-            if self.DEBUG:
-                print(self.outputBuffer.getPlainText()[1])
+            logging.debug(self.outputBuffer.getPlainText()[1])
 
 
 class ChangeDelayHandler(DLNestHandler):
@@ -129,8 +130,7 @@ class ChangeDelayHandler(DLNestHandler):
             traceback.print_exc()
         finally:
             self.afterExec()
-            if self.DEBUG:
-                print(self.outputBuffer.getPlainText()[1])
+            logging.debug(self.outputBuffer.getPlainText()[1])
 
 
 class ChangeDevicesHandler(DLNestHandler):
@@ -154,8 +154,7 @@ class ChangeDevicesHandler(DLNestHandler):
             traceback.print_exc()
         finally:
             self.afterExec()
-            if self.DEBUG:
-                print(self.outputBuffer.getPlainText()[1])
+            logging.debug(self.outputBuffer.getPlainText()[1])
 
 
 class ChangeMaxTaskPerDeviceHandler(DLNestHandler):
@@ -178,8 +177,7 @@ class ChangeMaxTaskPerDeviceHandler(DLNestHandler):
             traceback.print_exc()
         finally:
             self.afterExec()
-            if self.DEBUG:
-                print(self.outputBuffer.getPlainText()[1])
+            logging.debug(self.outputBuffer.getPlainText()[1])
 
 
 class ClearHandler(DLNestHandler):
@@ -200,8 +198,7 @@ class ClearHandler(DLNestHandler):
             traceback.print_exc()
         finally:
             self.afterExec()
-            if self.DEBUG:
-                print(self.outputBuffer.getPlainText()[1])
+            logging.debug(self.outputBuffer.getPlainText()[1])
 
 
 class ContinueTrainHandler(DLNestHandler):
@@ -240,8 +237,7 @@ class ContinueTrainHandler(DLNestHandler):
             traceback.print_exc()
         finally:
             self.afterExec()
-            if self.DEBUG:
-                print(self.outputBuffer.getPlainText()[1])
+            logging.debug(self.outputBuffer.getPlainText()[1])
 
 
 class DelTaskHandler(DLNestHandler):
@@ -265,8 +261,7 @@ class DelTaskHandler(DLNestHandler):
             traceback.print_exc()
         finally:
             self.afterExec()
-            if self.DEBUG:
-                print(self.outputBuffer.getPlainText()[1])
+            logging.debug(self.outputBuffer.getPlainText()[1])
 
 
 class GetAnalyzeOutputHandler(DLNestHandler):
@@ -292,8 +287,7 @@ class GetAnalyzeOutputHandler(DLNestHandler):
             traceback.print_exc()
         finally:
             self.afterExec()
-            if self.DEBUG:
-                print(self.outputBuffer.getPlainText()[1])
+            logging.debug(self.outputBuffer.getPlainText()[1])
 
 
 class GetDevicesInfoHandler(DLNestHandler):
@@ -315,8 +309,7 @@ class GetDevicesInfoHandler(DLNestHandler):
             traceback.print_exc()
         finally:
             self.afterExec()
-            if self.DEBUG:
-                print(self.outputBuffer.getPlainText()[1])
+            logging.debug(self.outputBuffer.getPlainText()[1])
 
 
 class GetDLNestOutputHandler(DLNestHandler):
@@ -341,8 +334,7 @@ class GetDLNestOutputHandler(DLNestHandler):
             traceback.print_exc()
         finally:
             self.afterExec()
-            if self.DEBUG:
-                print(self.outputBuffer.getPlainText()[1])
+            logging.debug(self.outputBuffer.getPlainText()[1])
 
 
 class GetTaskInfoHandler(DLNestHandler):
@@ -364,8 +356,7 @@ class GetTaskInfoHandler(DLNestHandler):
             traceback.print_exc()
         finally:
             self.afterExec()
-            if self.DEBUG:
-                print(self.outputBuffer.getPlainText()[1])
+            logging.debug(self.outputBuffer.getPlainText()[1])
 
 
 class NewProjectHandler(DLNestHandler):
@@ -375,8 +366,10 @@ class NewProjectHandler(DLNestHandler):
 
             targetDir = self.get_argument("target_dir")
             MNIST = True if self.get_argument("MNIST",default = "False") == "True" else False
+            pluginsStr = self.get_argument("plugins", default = "[]")
+            pluginsName = pluginsStr.strip().split(" ")
             
-            new(targetDir,MNIST = MNIST)
+            new(targetDir,MNIST = MNIST, pluginsName = pluginsName)
 
             self.write({
                 "status" : "success"
@@ -390,8 +383,7 @@ class NewProjectHandler(DLNestHandler):
             traceback.print_exc()
         finally:
             self.afterExec()
-            if self.DEBUG:
-                print(self.outputBuffer.getPlainText()[1])
+            logging.debug(self.outputBuffer.getPlainText()[1])
 
 
 class RunTrainHandler(DLNestHandler):
@@ -434,8 +426,7 @@ class RunTrainHandler(DLNestHandler):
             traceback.print_exc()
         finally:
             self.afterExec()
-            if self.DEBUG:
-                print(self.outputBuffer.getPlainText()[1])
+            logging.debug(self.outputBuffer.getPlainText()[1])
 
 
 class RunExpHandler(DLNestHandler):
@@ -459,5 +450,35 @@ class RunExpHandler(DLNestHandler):
             traceback.print_exc()
         finally:
             self.afterExec()
-            if self.DEBUG:
-                print(self.outputBuffer.getPlainText()[1])
+            logging.debug(self.outputBuffer.getPlainText()[1])
+
+
+class AddPluginsHandler(DLNestHandler):
+    def post(self):
+        try:
+            self.beforeExec("Add plugins")
+
+            targetDir = self.get_argument("target_dir")
+            full = True if self.get_argument("full",default = "False") == "True" else False
+            pluginsStr = self.get_argument("plugins", default = "[]")
+            pluginsName = pluginsStr.strip().split(" ")
+
+            usePlugins(
+                targetDir = targetDir,
+                pluginsName = pluginsName,
+                full = full
+            )
+            self.write({
+                "status" : "success"
+            })
+
+            print("Added plugins {} in {}".format(pluginsStr, targetDir))
+        except Exception as e:
+            self.write({
+                "status" : "error",
+                "error" : str(e)
+            })
+            traceback.print_exc()
+        finally:
+            self.afterExec()
+            logging.debug(self.outputBuffer.getPlainText()[1])

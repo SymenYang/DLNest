@@ -1,5 +1,7 @@
 from functools import wraps
 import logging
+from DLNest.Plugins.Utils.CheckPlugins import checkPlugins,checkDictOutputPlugins
+
 
 class ModelBase:
     def __init__(self,_envType : str, args : dict,rank = -1,worldSize = -1, plugins : list = []):
@@ -11,36 +13,6 @@ class ModelBase:
 
     def getArgs(self):
         return self._args
-
-    def checkPlugins(func):
-        @wraps(func)
-        def checkAndRun(*args, **kwargs):
-            name = func.__name__
-            for plugin in args[0]._plugins:
-                if name[1:] in dir(plugin):
-                    try:
-                        getattr(plugin,name[1:])(*args, **kwargs)
-                    except Exception as e:
-                        logging.debug(str(e))
-            return func(*args, **kwargs)
-        
-        return checkAndRun
-
-    def checkDictOutputPlugins(func):
-        @wraps(func)
-        def checkAndRun(*args, **kwargs):
-            name = func.__name__
-            ret = {}
-            for plugin in args[0]._plugins:
-                if name[1:] in dir(plugin):
-                    try:
-                        ret.update(getattr(plugin,name[1:])(*args, **kwargs))
-                    except Exception as e:
-                        logging.debug(str(e))
-            ret.update(func(*args, **kwargs))
-            return ret
-        
-        return checkAndRun
 
     @checkPlugins
     def _modelInit(self,args : dict, datasetInfo : dict = None):
@@ -121,28 +93,3 @@ class ModelBase:
 
     def validationAnalyze(self, log : dict):
         pass
-
-
-class test_plugin:
-    def validationInit(self):
-        print(self)
-
-    def visualize(self, log: dict, iter: int, epoch: int):
-        print(self._envType,log,iter,epoch)
-    
-    def initLog(self):
-        return {
-            "test" : []
-        }
-
-class test_plugin2:
-    def initLog(self):
-        return {
-            "test2" : []
-        }
-
-if __name__ == "__main__":
-    M = ModelBase("haha",plugins=[test_plugin,test_plugin2])
-    M._visualize({'test' : "test"},123,321)
-    M._validationInit()
-    print(M._initLog())

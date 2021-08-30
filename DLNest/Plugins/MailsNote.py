@@ -1,5 +1,5 @@
 from DLNest.Plugins.DLNestPluginBase import DLNestPluginBase as DPB
-from DLNest.Plugins.SendMailTools import sendSelfMail
+from DLNest.Plugins.Utils.SendMailTools import sendSelfMail
 import DLNest
 import traceback
 import logging

@@ -4,6 +4,7 @@ except ImportError:
     pass
 from functools import wraps
 import logging
+from DLNest.Plugins.Utils.CheckPlugins import checkPlugins,checkDictOutputPlugins
 
 class DatasetBase:
     def __init__(self,_envType : str, args : dict, plugins : list = []):
@@ -13,36 +14,6 @@ class DatasetBase:
 
     def getArgs(self):
         return self._args
-
-    def checkPlugins(func):
-        @wraps(func)
-        def checkAndRun(*args, **kwargs):
-            name = func.__name__
-            for plugin in args[0]._plugins:
-                if name[1:] in dir(plugin):
-                    try:
-                        getattr(plugin,name[1:])(*args, **kwargs)
-                    except Exception as e:
-                        logging.debug(str(e))
-            return func(*args, **kwargs)
-        
-        return checkAndRun
-
-    def checkDictOutputPlugins(func):
-        @wraps(func)
-        def checkAndRun(*args, **kwargs):
-            name = func.__name__
-            ret = {}
-            for plugin in args[0]._plugins:
-                if name[1:] in dir(plugin):
-                    try:
-                        ret.update(getattr(plugin,name[1:])(*args, **kwargs))
-                    except Exception as e:
-                        logging.debug(str(e))
-            ret.update(func(*args, **kwargs))
-            return ret
-        
-        return checkAndRun
 
     @checkPlugins
     def _datasetInit(self, args : dict):

@@ -1,8 +1,9 @@
 import shutil
 from pathlib import Path
 import json
+from DLNest.Operations.UsePlugin import usePlugin
 
-def new(targetDir : str, MNIST : bool = False):
+def new(targetDir : str, MNIST : bool = False, pluginsName = []):
     projectPath = Path(targetDir).absolute()
     # If target path already exists, return
     if projectPath.exists():
@@ -38,5 +39,10 @@ def new(targetDir : str, MNIST : bool = False):
         datasetConfig["dataset_config"]["data_root"] = str(projectPath / "MNIST")
         with datasetConfigPath.open("w") as fp:
             json.dump(datasetConfig,fp,indent = 4, separators = (',',':'))
+        
+    
+    # Add plugins
+    for pluginName in pluginsName:
+        usePlugin(targetDir, pluginName = pluginName, full = False)
 
     print("Create a project in " + targetDir + ".")

@@ -11,6 +11,7 @@ from DLNest.Operations.New import new
 from DLNest.Operations.Run import run
 from DLNest.Operations.RunExp import runExp
 from DLNest.Operations.SafeExit import safeExit
+from DLNest.Operations.UsePlugin import usePlugins
 
 import argparse
 from prompt_toolkit import PromptSession,HTML
@@ -44,6 +45,7 @@ class ProjectArguments(Arguments):
 
         self._parser.add_argument("-d",type=str, help="Path to the directory you want to create the project.", required = True)
         self._parser.add_argument("-MNIST",action='store_true', help="Set to new a project with MNIST task.")
+        self._parser.add_argument("-p", type = str, nargs='+',default=[], help = "Set plugins need to be used.")
 
 class AnalyzeArguments(Arguments):
     def __init__(self):
@@ -72,6 +74,14 @@ class DeviceChangeArguments(Arguments):
         super(DeviceChangeArguments, self).__init__(desc="Arguments for change valid cards.")
         self._parser.add_argument("-d",type=int, nargs='+', help='valid devices', required = True)
 
+class AddPluginsArguents(Arguments):
+    def __init__(self):
+        super(AddPluginsArguents, self).__init__(desc="Arguments for add plugins.")
+
+        self._parser.add_argument("-d", type=str, help="Path to the directory you want to create the project.", required = True)
+        self._parser.add_argument("-p", type = str, nargs='+', help = "Set plugins need to be used.",required = True)
+        self._parser.add_argument("-F", action='store_true', help="Set to use full config")
+
 class DLNestLocal:
     def __init__(self):
         self.trainArgParser = TrainArguments()
@@ -79,6 +89,7 @@ class DLNestLocal:
         self.projectArgParser = ProjectArguments()
         self.analyzeArgParser = AnalyzeArguments()
         self.deviceChangeArgParser = DeviceChangeArguments()
+        self.addPluginsArgParser = AddPluginsArguents()
 
     def runTrain(self,commandWordList : list):
         args,otherArgs = self.trainArgParser.parser().parse_known_args(commandWordList[1:])
@@ -99,7 +110,8 @@ class DLNestLocal:
         args,otherArgs = self.projectArgParser.parser().parse_known_args(commandWordList[1:])
         new(
             targetDir = args.d,
-            MNIST = args.MNIST
+            MNIST = args.MNIST,
+            pluginsName = args.p
         )
 
     def runAnalyze(self,commandWordList : list):
@@ -133,6 +145,14 @@ class DLNestLocal:
     def runExp(self,commandWordList : list):
         runExp(commandWordList[1],commandWordList[2])
 
+    def addPlugin(self, commandWordList : list):
+        args, otherArgs = self.addPluginsArgParser.parser().parse_known_args(commandWordList[1:])
+        usePlugins(
+            targetDir = args.d,
+            pluginsName = args.p,
+            full = args.F
+        )
+
     def run(self):
         self.session = PromptSession(auto_suggest = AutoSuggestFromHistory())
         while True:
@@ -159,6 +179,8 @@ class DLNestLocal:
                     print(getDevicesInformation())
                 elif commandWordList[0] == 'changeDevices':
                     self.changeDevices(commandWordList)
+                elif commandWordList[0] == "addP":
+                    self.addPlugin(commandWordList)
                 elif commandWordList[0] == "exit":
                     safeExit()
                     exit(0)
