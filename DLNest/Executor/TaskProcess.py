@@ -85,7 +85,7 @@ class TaskProcess(Process):
         datasetName = self.task.args['dataset_name']
         if datasetName in dir(self.datasetModule):
             datasetClass = self.datasetModule.__getattribute__(datasetName)
-            self.dataset = datasetClass(_envType = self.envType,plugins = self.plugins)
+            self.dataset = datasetClass(_envType = self.envType,args = self.task.args, plugins = self.plugins)
             self.datasetInfo,self.trainLoader,self.valLoader = self.dataset._datasetInit(self.task.args)
             # load from ckpt is needed.
             if self.task.loadCkpt:
@@ -97,7 +97,7 @@ class TaskProcess(Process):
         modelName = self.task.args['model_name']
         if modelName in dir(self.modelModule):
             modelClass = self.modelModule.__getattribute__(modelName)
-            self.model = modelClass(_envType = self.envType,rank = self.rank,worldSize = self.worldSize, plugins = self.plugins)
+            self.model = modelClass(_envType = self.envType,args = self.task.args, rank = self.rank,worldSize = self.worldSize, plugins = self.plugins)
             self.model._modelInit(self.task.args,self.datasetInfo)
             if self.envType != "DDP":
                 self.model._initOptimizer()

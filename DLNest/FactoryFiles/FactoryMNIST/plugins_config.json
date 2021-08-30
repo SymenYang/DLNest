@@ -2,7 +2,8 @@
     "plugins" : [
         "LogInit",
         "AutoTensorboardScalar",
-        "SimpleCMDVisualize"
+        "SimpleCMDVisualize",
+        "MailsNote"
     ],
     "plugins_config" : {
         "SimpleCMDVisualize" : {
@@ -15,6 +16,13 @@
         },
         "LogInit" : {
             "level" : "INFO"
+        },
+        "MailsNote" : {
+            "enable_list" : ["Aborting","TrainFinish"],
+            "username" : "",
+            "password" : "",
+            "host" : "mail.fudan.edu.cn",
+            "port" : 25
         }
     }
 }

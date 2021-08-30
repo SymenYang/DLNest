@@ -1,6 +1,7 @@
 from DLNest.Common.DatasetBase import DatasetBase
 from DLNest.Common.ModelBase import ModelBase
 from DLNest.Common.LifeCycleBase import LifeCycleBase
+from DLNest.Plugins.MailsNote import DLNestPlugin as MailsNotePlugin
 
 
 class LifeCycle(LifeCycleBase):
@@ -22,6 +23,7 @@ class LifeCycle(LifeCycleBase):
     def holdThisCheckpoint(self, epoch : int, logdict : dict, args : dict):
         if logdict["acc"][-1] > self.maxAcc:
             self.maxAcc = logdict["acc"][-1]
+            MailsNotePlugin.giveResultValues({'acc' : self.maxAcc})
             return True
         return False
 

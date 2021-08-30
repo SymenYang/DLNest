@@ -7,6 +7,7 @@ except ImportError:
     from DLNest.Common.ModelBase import ModelBase
 import traceback
 from functools import wraps
+import logging
 
 class LifeCycleBase:
     def __init__(self,model : ModelBase = None,dataset : DatasetBase = None, taskProcess = None, rank : int = -1, plugins : list = []):
@@ -17,15 +18,21 @@ class LifeCycleBase:
         self._plugins = plugins
     
     def checkPlugins(func):
-        #@wraps(func)
+        @wraps(func)
         def checkAndRun(*args, **kwargs):
             name = func.__name__
             for plugin in args[0]._plugins:
                 if name[1:] in dir(plugin):
-                    getattr(plugin,name[1:])(*args, **kwargs)
+                    try:
+                        getattr(plugin,name[1:])(*args, **kwargs)
+                    except Exception as e:
+                        logging.debug(str(e))
             return func(*args, **kwargs)
         
         return checkAndRun
+
+    def getArgs(self):
+        return self.taskProcess.task.args
 
     def BAll(self):
         pass

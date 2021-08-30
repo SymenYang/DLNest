@@ -1,11 +1,16 @@
 from functools import wraps
+import logging
 
 class ModelBase:
-    def __init__(self,_envType : str,rank = -1,worldSize = -1, plugins : list = []):
+    def __init__(self,_envType : str, args : dict,rank = -1,worldSize = -1, plugins : list = []):
         self._envType = _envType
         self._rank = rank
         self._worldSize = worldSize
         self._plugins = plugins
+        self._args = args
+
+    def getArgs(self):
+        return self._args
 
     def checkPlugins(func):
         @wraps(func)
@@ -13,7 +18,10 @@ class ModelBase:
             name = func.__name__
             for plugin in args[0]._plugins:
                 if name[1:] in dir(plugin):
-                    getattr(plugin,name[1:])(*args, **kwargs)
+                    try:
+                        getattr(plugin,name[1:])(*args, **kwargs)
+                    except Exception as e:
+                        logging.debug(str(e))
             return func(*args, **kwargs)
         
         return checkAndRun
@@ -25,7 +33,10 @@ class ModelBase:
             ret = {}
             for plugin in args[0]._plugins:
                 if name[1:] in dir(plugin):
-                    ret.update(getattr(plugin,name[1:])(*args, **kwargs))
+                    try:
+                        ret.update(getattr(plugin,name[1:])(*args, **kwargs))
+                    except Exception as e:
+                        logging.debug(str(e))
             ret.update(func(*args, **kwargs))
             return ret
         
@@ -38,7 +49,7 @@ class ModelBase:
     def init(self,args : dict, datasetInfo : dict = None):
         self.args = args
         pass
-    
+
     @checkPlugins
     def _initOptimizer(self):
         return self.initOptimizer()

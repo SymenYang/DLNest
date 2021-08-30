@@ -1,7 +1,11 @@
 from torch.utils.tensorboard import SummaryWriter
 import logging
+from DLNest.Plugins.DLNestPluginBase import DLNestPluginBase as DPB
 
-class DLNestPlugin:
+class DLNestPlugin(DPB):
+    _NAME = "AutoTensorboardScalar"
+    _config = {}
+    _defaultKeys = []
     def modelInit(self,args : dict, datasetInfo : dict = None):
         if self._rank == -1 or self._rank == 0:
             self.writer = SummaryWriter(".")

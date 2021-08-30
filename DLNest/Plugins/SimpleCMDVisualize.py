@@ -1,12 +1,20 @@
 import logging
-from DLNest.Plugins.Tools import getArgs
+from DLNest.Plugins.DLNestPluginBase import DLNestPluginBase as DPB
 
-class DLNestPlugin:
+class DLNestPlugin(DPB):
+    _NAME = "SimpleCMDVisualize"
+    _config = {
+        "stride" : 1,
+        "keys" : [],
+        "format" : []
+    }
+    _defaultKeys = ["stride", "keys", "format"]
+
     def modelInit(self,args : dict, datasetInfo : dict = None):
         pluginName = "SimpleCMDVisualize"
-        self._visualStride = getArgs(args, pluginName, "stride", 1)
-        self._visualKeys = getArgs(args, pluginName, "keys" , [])
-        self._visualFormat = getArgs(args, pluginName, "format", {})
+        self._visualStride = DPB.getArgs(self, pluginName, "stride", 1)
+        self._visualKeys = DPB.getArgs(self, pluginName, "keys" , [])
+        self._visualFormat = DPB.getArgs(self, pluginName, "format", {})
         fmtDict = {key : "\t| {}: {}" for key in self._visualKeys}
         fmtDict.update(self._visualFormat)
         self._visualFormat = fmtDict

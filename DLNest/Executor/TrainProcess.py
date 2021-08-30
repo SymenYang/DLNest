@@ -136,9 +136,9 @@ class TrainProcess(TaskProcess):
                     break
         except Exception as e:
             self.lifeCycle._trainAborting(e)
-        
-        # After Train
-        self.lifeCycle._ATrain()
+        else:
+            # After Train
+            self.lifeCycle._ATrain()
 
     def loadCkpt(self):
         super().loadCkpt()
