@@ -47,6 +47,9 @@ def runTrain(args):
     )
 
 if __name__ == "__main__":
+    import sys
+    if sys.path[0] != '':
+        sys.path[0] = ''
     argparser = TaskArguments()
     parser = argparser.parser()
     args = parser.parse_args()

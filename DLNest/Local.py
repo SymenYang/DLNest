@@ -196,5 +196,8 @@ class DLNestLocal:
                 print(s)
 
 if __name__ == "__main__":
+    import sys
+    if sys.path[0] != '':
+        sys.path[0] = ''
     main = DLNestLocal()
     main.run()

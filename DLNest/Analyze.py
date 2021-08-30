@@ -68,6 +68,9 @@ def analyze(
     )
 
 if __name__ == "__main__":
+    import sys
+    if sys.path[0] != '':
+        sys.path[0] = ''
     argparser = AnalyzeArguments()
     parser = argparser.parser()
     args = parser.parse_args()
