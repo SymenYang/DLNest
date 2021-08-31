@@ -255,7 +255,7 @@ class LifeCycleBase:
     
     @checkPlugins
     def _loadSaveDict(self,saveDict):
-        return self.loadSaveDict()
+        return self.loadSaveDict(saveDict)
 
     @checkPlugins
     def _AAll(self):

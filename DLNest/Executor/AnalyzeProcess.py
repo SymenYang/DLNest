@@ -83,3 +83,11 @@ class AnalyzeProcess(TaskProcess):
         finally:
             if self.output != None:
                 self.output.appName = "DLNest Analyze Process"
+    
+    def run(self):
+        try:
+            super().run()
+        except Exception as e:
+            import traceback
+            with open("./.analyzeException.tmp.txt","w") as f:
+                f.write(traceback.format_exc())

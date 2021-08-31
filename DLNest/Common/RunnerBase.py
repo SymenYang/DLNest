@@ -54,7 +54,7 @@ class RunnerBase:
 
     @ checkPlugins
     def _loadSaveDict(self,saveDict):
-        return self._loadSaveDict(saveDict = saveDict)
+        return self.loadSaveDict(saveDict = saveDict)
 
     def loadSaveDict(self,saveDict):
         pass

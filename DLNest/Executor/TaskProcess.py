@@ -108,7 +108,7 @@ class TaskProcess(Process):
 
             # load from ckpt is needed.
             if self.task.loadCkpt:
-                self.runner._loadSaveDict(self.stateDict["runner"])
+                self.runner._loadSaveDict(self.stateDict["runner"] if "runner" in self.stateDict else self.stateDict["model"])
             else:
                 # if load from ckpt, logDict has been loaded in self.loadCkpt
                 self.logDict = self.runner._initLog()
