@@ -21,7 +21,7 @@ class DLNestPlugin(DPB):
         pluginName = DLNestPlugin._NAME
         enable = "Aborting" in DPB.getArgs(self, pluginName, "enable_list", [])
         if not enable:
-            logging.debug("MailsNote not enable for aborting")
+            logging.debug("MailsNote is not enabled for aborting")
             return 
         
         username = DPB.getArgs(self, pluginName, "username", "")
@@ -44,7 +44,7 @@ class DLNestPlugin(DPB):
         pluginName = DLNestPlugin._NAME
         enable = "TrainFinish" in DPB.getArgs(self, pluginName, "enable_list", [])
         if not enable:
-            logging.debug("MailsNote not enable for train finish")
+            logging.debug("MailsNote is not enabled for train finish")
             return
 
         username = DPB.getArgs(self, pluginName, "username", "")
@@ -87,7 +87,7 @@ class DLNestPlugin(DPB):
         password = DPB.getArgs(self, pluginName, "password", "")
         host = DPB.getArgs(self, pluginName, "host", "mail.fudan.edu.cn")
         port = DPB.getArgs(self, pluginName, "port", 25)
-        message = "Train task in {} give a message\n".format(self.getArgs()["root_file_path"]) + message
+        message = "Train task in {} gives a message\n".format(self.getArgs()["root_file_path"]) + message
         
         sendSelfMail(
             username = username,
@@ -101,6 +101,6 @@ class DLNestPlugin(DPB):
     
     def SOTA(self, key, value):
         value = str(value)
-        message = "Congratulations! SOTA performance in {} are made by you train task {} with value {}!".format(key, self.getArgs()["root_file_path"], value)
+        message = "Congratulations! SOTA performance in {} has been made by your train task {} with value {}!".format(key, self.getArgs()["root_file_path"], value)
         subject = "SOTA for {}!".format(key)
         DLNestPlugin.custom(self, message, subject)

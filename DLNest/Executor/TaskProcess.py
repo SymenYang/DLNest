@@ -226,7 +226,7 @@ class TaskProcess(Process):
         if self.lifeCycle._BAll() != "Skip":
             if self.lifeCycle._BDatasetInit() != "Skip":
                 self.__initDataset()
-                self.lifeCycle._dataset = self.dataset
+                self.lifeCycle.dataset = self.dataset
             self.lifeCycle._ADatasetInit()
         
             if self.lifeCycle._BModelInit() != "Skip":
@@ -246,7 +246,8 @@ class TaskProcess(Process):
             context = mp.spawn(
                 self.runDDP,
                 nprocs=self.deviceNum,
-                join=False
+                join=False,
+                daemon = True
             )
             self.initOutput()
             while not context.join():

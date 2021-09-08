@@ -6,7 +6,7 @@ class DLNestPlugin(DPB):
     _config = {
         "stride" : 1,
         "keys" : [],
-        "format" : []
+        "format" : {}
     }
     _defaultKeys = ["stride", "keys", "format"]
 

@@ -38,19 +38,34 @@ class TrainProcess(TaskProcess):
         holdThisCheckpoint = self.lifeCycle.holdThisCheckpoint(self.finishedEpoch,self.logDict,self.task.args)
         self.saveCkpt(holdThisCheckpoint = holdThisCheckpoint)
 
+    def __moveAData(self,data):
+        try:
+            if "cuda" in dir(data):
+                data = data.cuda()
+                return True
+            elif "to" in dir(data):
+                tmp = torch.tensor(1).cuda()
+                data = data.to(tmp)
+                return True
+            else:
+                return False
+        except Exception as e:
+            return False
+
     def __moveData(self,data):
         # move data to the proper location
         if self.envType != "CPU":
-            if isinstance(data,torch.Tensor):
-                data = data.cuda()
-            elif isinstance(data,list):
-                for index in range(len(data)):
-                    if isinstance(data[index],torch.Tensor):
-                        data[index] = data[index].cuda()
-            elif isinstance(data,dict):
-                for key in data:
-                    if isinstance(data[key],torch.Tensor):
-                        data[key] = data[key].cuda() 
+            try:
+                if self.__moveAData(data):
+                    pass
+                elif isinstance(data,list):
+                    for index in range(len(data)):
+                        self.__moveAData(data[index])
+                elif isinstance(data,dict):
+                    for key in data:
+                        self.__moveAData(data[key])
+            except Exception as e:
+                pass
         return data
 
     def __train_an_epoch(self,start_epoch : int):
@@ -134,7 +149,7 @@ class TrainProcess(TaskProcess):
                     nowEpoch = self.finishedEpoch + 1
                 else:
                     break
-        except Exception as e:
+        except (Exception,SystemExit) as e:
             self.lifeCycle._trainAborting(e)
         else:
             # After Train
