@@ -28,6 +28,7 @@ class TaskProcess(Process):
         self.finishedEpoch = -1
         self.rank = -1
         self.worldSize = -1
+        self.plugins = []
     
     def __loadAModule(self,filePath : Path,name : str):
         if not filePath.is_absolute():

@@ -14,23 +14,26 @@ class RunnerBaseTorch(RunnerBase):
 
     def register(self,model : nn.Module,syncBN : bool = False):
         if self._envType == "DDP":
-            model = model.cuda()
-            if syncBN:
-                model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
             self.__modelList.append(model)
-            try:
-                model = nn.parallel.DistributedDataParallel(
-                    model,
-                    device_ids=[self._rank],
-                    output_device=self._rank
-                )
-                return model
-            except AssertionError:
-                return model
-        else:
-            if self._envType != "CPU":
+            if isinstance(model, nn.Module):
                 model = model.cuda()
+                if syncBN:
+                    model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
+                try:
+                    model = nn.parallel.DistributedDataParallel(
+                        model,
+                        device_ids=[self._rank],
+                        output_device=self._rank,
+                        find_unused_parameters=True
+                    )
+                except AssertionError:
+                    pass
+            return model
+        else:
             self.__modelList.append(model)
+            if isinstance(model, nn.Module):
+                if self._envType != "CPU":
+                    model = model.cuda()
             return model
 
     def getSaveDict(self):

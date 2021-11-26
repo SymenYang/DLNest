@@ -41,29 +41,29 @@ class TrainProcess(TaskProcess):
     def __moveAData(self,data):
         try:
             if "cuda" in dir(data):
-                data = data.cuda()
-                return True
+                ret_data = data.cuda()
+                return ret_data
             elif "to" in dir(data):
                 tmp = torch.tensor(1).cuda()
-                data = data.to(tmp)
-                return True
+                ret_data = data.to(tmp.device)
+                return ret_data
             else:
-                return False
+                return data
         except Exception as e:
-            return False
+            return data
 
     def __moveData(self,data):
         # move data to the proper location
         if self.envType != "CPU":
             try:
-                if self.__moveAData(data):
-                    pass
-                elif isinstance(data,list):
+                if isinstance(data,list):
                     for index in range(len(data)):
-                        self.__moveAData(data[index])
+                        data[index] = self.__moveAData(data[index])
                 elif isinstance(data,dict):
                     for key in data:
-                        self.__moveAData(data[key])
+                        data[key] = self.__moveAData(data[key])
+                else:
+                    data = self.__moveAData(self, data)
             except Exception as e:
                 pass
         return data

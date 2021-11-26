@@ -7,7 +7,7 @@ import logging
 from DLNest.Plugins.Utils.CheckPlugins import checkPlugins,checkDictOutputPlugins
 
 class DatasetBase:
-    def __init__(self,_envType : str, args : dict, plugins : list = []):
+    def __init__(self,_envType : str = "CPU", args : dict = {}, plugins : list = []):
         self._envType = _envType
         self._args = args
         self._plugins = plugins

@@ -13,6 +13,7 @@ class AnalyzeWrapper:
     def __init__(self,args : dict, runner , dataset, log : dict):
         self.args = args
         self.runner = runner
+        self.model = runner # 后向兼容
         self.dataset = dataset
         self.log = log
 

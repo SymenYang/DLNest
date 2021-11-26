@@ -16,6 +16,8 @@ class DLNestPlugin(DPB):
     _defaultKeys = ["enable_list","username","password","host"]
     
     def trainAborting(self, exception : Exception):
+        if self.rank != 0 and self.rank != -1:
+            return
         excStr = traceback.format_exc()
 
         pluginName = DLNestPlugin._NAME
@@ -41,6 +43,8 @@ class DLNestPlugin(DPB):
         logging.info("[MailsNote] " + message)
     
     def ATrain(self):
+        if self.rank != 0 and self.rank != -1:
+            return
         pluginName = DLNestPlugin._NAME
         enable = "TrainFinish" in DPB.getArgs(self, pluginName, "enable_list", [])
         if not enable:

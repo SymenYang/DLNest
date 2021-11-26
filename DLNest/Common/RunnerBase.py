@@ -72,7 +72,11 @@ class RunnerBase:
 
     def visualize(self,log : dict, iter : int, epoch : int):
         pass
-
+    
+    @checkPlugins
+    def _validate(self, loader, log):
+        return self.validate(loader, log)
+    
     @checkPlugins
     def _validationInit(self):
         return self.validationInit()
