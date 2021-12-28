@@ -4,12 +4,18 @@ from DLNest.Plugins.Utils.CheckPlugins import checkPlugins,checkDictOutputPlugin
 
 
 class RunnerBase:
-    def __init__(self,_envType : str, args : dict,rank = -1,worldSize = -1, plugins : list = []):
-        self._envType = _envType
-        self._rank = rank
-        self._worldSize = worldSize
+    def __init__(self,args : dict, plugins : list = [], status = None):
         self._plugins = plugins
         self._args = args
+        self._status = status
+
+    # for backward compatibility
+    @property
+    def _rank(self):
+        if not "_warned_rank" in dir(self):
+            self._warned_rank = True
+            print("Runner._rank is deprecated, please use Runner._status.rank")
+        return self._status.rank
 
     def getArgs(self):
         return self._args
