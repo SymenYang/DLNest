@@ -41,6 +41,12 @@ class ModuleWrapper:
         else:
             return self.__M(*args, **kwargs)
     
+    def __str__(self):
+        if self.__DDP:
+            return self.__DDP.__str__() + " in DLNest ModuleWrapper"
+        else:
+            return self.__M.__str__() + " in DLNest ModuleWrapper"
+
     def singleCard(self, *args, **kwargs):
         self.__M(*args, **kwargs)
 
