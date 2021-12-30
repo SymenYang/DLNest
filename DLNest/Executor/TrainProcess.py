@@ -59,6 +59,11 @@ class TrainProcess(TaskProcess):
                 if isinstance(data,list):
                     for index in range(len(data)):
                         data[index] = self.__moveAData(data[index])
+                elif isinstance(data, tuple):
+                    ret = []
+                    for index in range(len(data)):
+                        ret.append(self.__moveAData(data[index]))
+                    data = tuple(ret)
                 elif isinstance(data,dict):
                     for key in data:
                         data[key] = self.__moveAData(data[key])
