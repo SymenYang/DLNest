@@ -56,7 +56,7 @@ class TrainProcess(TaskProcess):
         # move data to the proper location
         if self.envType != "CPU":
             try:
-                if isinstance(data,list):
+                if isinstance(data,list) or isinstance(data, tuple):
                     for index in range(len(data)):
                         data[index] = self.__moveAData(data[index])
                 elif isinstance(data, tuple):
