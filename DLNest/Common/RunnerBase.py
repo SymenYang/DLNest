@@ -1,10 +1,11 @@
 from functools import wraps
 import logging
 from DLNest.Plugins.Utils.CheckPlugins import checkPlugins,checkDictOutputPlugins
+from DLNest.Common.RunningStatus import RunningStatus
 
 
 class RunnerBase:
-    def __init__(self,args : dict, plugins : list = [], status = None):
+    def __init__(self,args : dict, plugins : list = [], status = RunningStatus()):
         self._plugins = plugins
         self._args = args
         self._status = status
@@ -16,6 +17,14 @@ class RunnerBase:
             self._warned_rank = True
             print("Runner._rank is deprecated, please use Runner._status.rank")
         return self._status.rank
+
+    # for backward compatibility
+    @property
+    def _envType(self):
+        if not "_warned_env" in dir(self):
+            self._warned_env = True
+            print("Runner._envType is deprecated, please use Runner._status.env")
+        return self._status.env
 
     def getArgs(self):
         return self._args

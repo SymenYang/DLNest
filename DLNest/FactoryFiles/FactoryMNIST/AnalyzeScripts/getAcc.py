@@ -6,7 +6,7 @@ def experience(self):
     total = 0
     for _iter,data in enumerate(valLoader):
         x,y = data
-        if self.runner._envType != "CPU":
+        if self.runner._status.env != "CPU":
             x,y = x.cuda(),y.cuda()
         with torch.no_grad():
             output = self.runner.model(x)

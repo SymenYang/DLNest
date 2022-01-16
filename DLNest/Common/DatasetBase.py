@@ -5,9 +5,10 @@ except ImportError:
 from functools import wraps
 import logging
 from DLNest.Plugins.Utils.CheckPlugins import checkPlugins,checkDictOutputPlugins
+from DLNest.Common.RunningStatus import RunningStatus
 
 class DatasetBase:
-    def __init__(self, args : dict = {}, plugins : list = [], status = None):
+    def __init__(self, args : dict = {}, plugins : list = [], status = RunningStatus()):
         self._args = args
         self._plugins = plugins
         self._status = status
