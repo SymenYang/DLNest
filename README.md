@@ -29,7 +29,7 @@ new -d <项目新建绝对路径> -MNIST
     |   |--Dataset.py
     |--Model
     |   |--MNISTCNN.py
-    |   |--Model.py
+    |   |--Runner.py
     |--common_config.json
     |--dataset_config.json
     |--freq_config.json
@@ -120,7 +120,7 @@ Server则通过调用Operation层中的函数来进行各式各样的操作。
     |--Dataset
     |   |--Dataset.py
     |--Model
-    |   |--Model.py
+    |   |--Runner.py
     |--LifeCycle.py
     |--args.json
     |--_package.json
@@ -163,17 +163,17 @@ Server则通过调用Operation层中的函数来进行各式各样的操作。
 ```json
 {
     "save_root":某个目录,
-    "model_name":"Model",
+    "runner_name":"Runner",
     "dataset_name":"Dataset",
     "life_cycle_name":"LifeCycle",
     "checkpoint_args":{
-        "max_ckpt_in_slow_track":100,
+        "max_ckpt_in_slow_track":0,
         "dilation_in_slow_track":100,
-        "max_ckpt_in_fast_track":2,
+        "max_ckpt_in_fast_track":1,
         "max_ckpt_in_consistent_track":1
     },
     "root_file_path":某个目录,
-    "model_file_path":"./Model/Model.py",
+    "runner_file_path":"./Model/Runner.py",
     "dataset_file_path":"./Dataset/Dataset.py",
     "life_cycle_file_path":"./LifeCycle.py",
     "other_file_paths":[],
@@ -214,17 +214,17 @@ class LifeCycle(LifeCycleBase):
 除了这些需要修改的函数以外，在流程的各个阶段，均会有Bxxx（表示Before）函数和Axxx（表示After）函数在各个流程之前和之后调用，若在Bxxx函数中返回字符串Skip，则会跳过这个流程直接执行Axxx。这样的流程包括All, DatasetInit, ModelInit, Train, OneEpoch, ModelOneStep, Visualize, Validation, SaveModel。
 ### Dataset.py
 Dataset包含了数据集的初始化等操作，结构较为简单。其需要实现一个函数init，返回三个变量，分别是一个给模型初始化时使用的dict（用来传递数据给模型），一个训练用Loader（支持enumerate调用）和一个验证用Loader（支持enumerate调用）。数据集的具体实现则根据任务的实际情况进行即可。
-### Model.py
-Model可能基于ModelBase或ModelBaseTorch。其中ModelBaseTorch作为建议选项支持DDP，自动处理模型参数保存等功能。由于DLNest仅针对Pytorch进行设计，因此这里只对基于ModelBaseTorch的Model进行讲解。要使用ModelBaseTorch只需要如下import即可：
+### Runner.py
+Model可能基于RunnerBase或RunnerBaseTorch。其中RunnerBaseTorch作为建议选项支持DDP，自动处理模型参数保存等功能。由于DLNest仅针对Pytorch进行设计，因此这里只对基于RunnerBaseTorch的Model进行讲解。要使用RunnerBaseTorch只需要如下import即可：
 ```python
-from DLNest.Common.ModelBaseTorch import ModelBaseTorch
+from DLNest.Common.RunnerBaseTorch import RunnerBaseTorch
 ```
 Model主要需要实现以下几个函数：init, initLog, initOptimizer, runOneStep, visualize, validate。各个函数的作用与注意事项如下：
-1. init函数，输入args参数与数据集类给模型的信息datasetInfo，来构建模型。由于Model本身不继承nn.Module，模型的具体实现应该在该类之外进行定义，并在该类中实例化进行引用。实例化之后，需要调用ModelBaseTorch类中已经实现好的self.register()函数进行初始化，方便进行DDP和自动得到保存dict的操作。为了兼容使用DDP，请不要在这个函数中定义优化器。init函数的例子如下：
+1. init函数，输入args参数与数据集类给模型的信息datasetInfo，来构建模型。由于Model本身不继承nn.Module，模型的具体实现应该在该类之外进行定义，并在该类中实例化进行引用。将模型、optimizer和Learning rate scheduler实例化并赋值成为RunnerBaseTorch类的成员变量时，会自动进行DDP和自动得到保存dict等操作。为了兼容使用DDP，请不要在这个函数中定义优化器。init函数的例子如下：
 ```python
 def init(self,args : dict,datasetInfo : dict = None):
-    model = AModel(args)
-    self.model = self.register(model,syncBN=True) # SyncBN: 在DDP环境下指定是否使用同步BatchNorm
+    self.model = AModel(args)
+    #self.model = self.register(model,syncBN=True) # 如果需要在DDP环境下指定使用同步BatchNorm，请用显式的register函数注册模型
 ```  
 2. initLog函数返回一个字典，该字典定义了训练过程中需要记录的所有信息，一般包括loss、acc、其他指标等，不包括模型参数。
 3. initOptimizer函数用来定义优化器。由于DDP环境下优化器需要在模型全部DDP之后才能定义，因此将这部分进行独立。模型的DDP化会在需要时自动在register函数中被执行，initOptimizer会在init函数之后被调用。
