@@ -6,10 +6,9 @@ from MNISTCNN import MNISTModel
 
 class Runner(RunnerBaseTorch):
     def init(self,args : dict,datasetInfo : dict = None):
-        model = MNISTModel(args)
-        self.model = self.register(model,syncBN=True) # But no BN
-        cost = nn.CrossEntropyLoss()
-        self.cost = self.register(cost)
+        self.model = MNISTModel(args) # if BN layers need to be sync, use the following code
+        # self.model = self.register(model, syncBN=True)
+        self.cost = nn.CrossEntropyLoss()
 
     def initLog(self):
         return {
@@ -19,6 +18,7 @@ class Runner(RunnerBaseTorch):
 
     def initOptimizer(self):
         self.optimizer = torch.optim.Adam(self.model.parameters())
+        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, 3)
 
     def runOneStep(self,data, log : dict, iter : int, epoch : int):
         self.model.zero_grad()

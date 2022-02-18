@@ -3,6 +3,10 @@ import torch.nn as nn
 import torch.distributed as dist
 from .RunnerBase import RunnerBase
 from abc import ABCMeta, abstractmethod
+import typing
+from torch.optim.lr_scheduler import _LRScheduler
+from torch.optim.optimizer import Optimizer
+from DLNest.Plugins.Utils.CheckPlugins import checkPlugins,checkDictOutputPlugins
 
 class ModuleWrapper:
     """
@@ -54,15 +58,28 @@ class RunnerBaseTorch(RunnerBase):
     def __init__(self,args : dict, plugins = [], status = None):
         super(RunnerBaseTorch,self).__init__(args = args, plugins = plugins, status = status)
         self.__modelList = []
+        self.__optimizerDict = {}
+        self.__schedulerDict = {}
     
     def DDPOperation(self,rank : int):
         pass
 
-    def register(self,model : nn.Module,syncBN : bool = False):
+    def __setattr__(self, name, value):
+        if isinstance(value, nn.Module):
+            super().__setattr__(name, self.register(value))
+        elif isinstance(value, Optimizer):
+            super().__setattr__(name, self.__registerOptimizer(value, name))
+        elif isinstance(value, _LRScheduler):
+            super().__setattr__(name, self.__registerLRScheduler(value, name))
+        else:
+            super().__setattr__(name,value)
+
+    def register(self,module : nn.Module, syncBN : bool = False):
+        assert isinstance(module, nn.Module), "Only nn.Module can be registered. You tried to register a " + module.__class__.__name__
+        self.__modelList.append(module)
         if self._status.env == "DDP":
-            self.__modelList.append(model)
-            if isinstance(model, nn.Module):
-                model = model.cuda()
+            if isinstance(module, nn.Module):
+                model = module.cuda()
                 if syncBN:
                     model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
                 try:
@@ -76,21 +93,57 @@ class RunnerBaseTorch(RunnerBase):
                     DDPmodel = None
             return ModuleWrapper(model, DDPmodel)
         else:
-            self.__modelList.append(model)
-            if isinstance(model, nn.Module):
+            if isinstance(module, nn.Module):
                 if self._status.env != "CPU":
-                    model = model.cuda()
+                    model = module.cuda()
             return ModuleWrapper(model, None)
+
+    def __registerOptimizer(self, optimizer : Optimizer, name):
+        self.__optimizerDict[name] = optimizer
+        return optimizer
+
+    def __registerLRScheduler(self, scheduler : _LRScheduler, name):
+        self.__schedulerDict[name] = scheduler
+        return scheduler
 
     def getSaveDict(self):
         stateDict = {}
         for i in range(len(self.__modelList)):
             stateDict[i] = self.__modelList[i].state_dict()
+
+        stateDict["optimizer"] = {}
+        for name in self.__optimizerDict:
+            optimizer = self.__optimizerDict[name]
+            try:
+                stateDict["optimizer"][name] = optimizer.state_dict()
+            except Exception as e:
+                pass # may add some warning
+
+        stateDict["scheduler"] = {}
+        for name in self.__schedulerDict:
+            scheduler = self.__schedulerDict[name]
+            try:
+                stateDict["scheduler"][name] = scheduler.state_dict()
+            except Exception as e:
+                pass # may add some warning
         return stateDict
     
     def loadSaveDict(self,saveDict):
         for i in range(len(self.__modelList)):
             self.__modelList[i].load_state_dict(saveDict[i])
+        
+        if "optimizer" in saveDict:
+            for name in saveDict["optimizer"]:
+                self.__optimizerDict[name].load_state_dict(saveDict["optimizer"][name])
+
+        if "scheduler" in saveDict:
+            for name in saveDict["scheduler"]:
+                self.__schedulerDict[name].load_state_dict(saveDict["scheduler"][name])
+
+                # to reset the learing rate
+                self.__schedulerDict[name].step(
+                    self.__schedulerDict[name].last_epoch
+                )
 
     def _reduceSum(self,tensor):
         """
