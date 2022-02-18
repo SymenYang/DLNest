@@ -40,6 +40,7 @@ class AnalyzeProcess(TaskProcess):
 
     def mainLoop(self):
         self.analyzeWrapper = AnalyzeWrapper(self.task.args,self.runner,self.dataset,self.logDict)
+        self.status.startAnalyzing()
         if self.expFunc != None:
             # Have a setted exp to run
             self.runExp()

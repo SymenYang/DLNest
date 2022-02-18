@@ -54,7 +54,7 @@ class TrainProcess(TaskProcess):
 
     def __moveData(self,data):
         # move data to the proper location
-        if self.envType != "CPU":
+        if self.status.env != "CPU":
             try:
                 if isinstance(data,list):
                     for index in range(len(data)):
@@ -77,6 +77,7 @@ class TrainProcess(TaskProcess):
         nowEpoch = start_epoch
         for _iter,data in enumerate(self.trainLoader):
             # run one step
+            self.status._RunningStatus__iter = _iter
             if self.lifeCycle._BModelOneStep() != "Skip":
                 data = self.__moveData(data)
                 self.runner._runOneStep(data,self.logDict,_iter,nowEpoch)
@@ -84,8 +85,8 @@ class TrainProcess(TaskProcess):
 
             # visualize
             if self.lifeCycle.needVisualize(nowEpoch,_iter,self.logDict,self.task.args):
-                if self.envType == "DDP":
-                    if self.rank == 0 and self.lifeCycle._BVisualize() != "Skip":
+                if self.status.env == "DDP":
+                    if self.status.rank == 0 and self.lifeCycle._BVisualize() != "Skip":
                         self.runner._visualize(epoch = nowEpoch, iter = _iter, log = self.logDict)
                 else:
                     if self.lifeCycle._BVisualize() != "Skip":
@@ -96,6 +97,7 @@ class TrainProcess(TaskProcess):
     def __validate(self):
         self.runner._validationInit()
         for _iter,data in enumerate(self.valLoader):
+            self.status._RunningStatus__iter = _iter
             if self.lifeCycle._BValidateABatch() != "Skip":
                 data = self.__moveData(data)
                 self.runner._validateABatch(data,_iter)
@@ -108,17 +110,21 @@ class TrainProcess(TaskProcess):
     def mainLoop(self):
         try:
             nowEpoch = self.finishedEpoch + 1
+            self.status._RunningStatus__epoch = nowEpoch
             if self.lifeCycle._BTrain() == "Skip":
                 self.lifeCycle._ATrain()
                 return
             while True:
                 if self.lifeCycle._BOneEpoch() != "Skip":
-                    if self.envType == "DDP":
+                    # Training!
+                    self.status.startTraining()
+
+                    if self.status.env == "DDP":
                         self.trainLoader.sampler.set_epoch(nowEpoch)
 
                     self.__train_an_epoch(nowEpoch)                    
 
-                    if self.envType == "DDP":
+                    if self.status.env == "DDP":
                         dist.barrier() # Sync before validation
 
                     self.finishedEpoch = nowEpoch
@@ -128,18 +134,22 @@ class TrainProcess(TaskProcess):
                     # validation
                     if self.lifeCycle.needValidation(self.finishedEpoch,self.logDict,self.task.args):
                         if self.lifeCycle._BValidation() != "Skip":
+                            self.status.startValidating()
                             if "validate" in dir(self.runner):
                                 self.runner._validate(self.valLoader,self.logDict)
                             else:
                                 self.__validate()
                         self.lifeCycle._AValidation()
 
-                    if self.envType == "DDP":
-                        dist.barrier() # Sync before saving
+                    # start other operations
+                    self.status.startWaiting()
 
+                    if self.status.env == "DDP":
+                        dist.barrier() # Sync before saving
+                    
                     #save checkpoint
-                    if self.envType == "DDP":
-                        if self.rank == 0 and self.lifeCycle._BSaveModel() != "Skip":
+                    if self.status.env == "DDP":
+                        if self.status.rank == 0 and self.lifeCycle._BSaveModel() != "Skip":
                             if self.lifeCycle.needSaveModel(self.finishedEpoch,self.logDict,self.task.args):
                                 self.__saveModel()
                     else:
@@ -152,6 +162,7 @@ class TrainProcess(TaskProcess):
                  # break decision
                 if self.lifeCycle.needContinueTrain(self.finishedEpoch,self.logDict,self.task.args):
                     nowEpoch = self.finishedEpoch + 1
+                    self.status._RunningStatus__epoch = nowEpoch
                 else:
                     break
         except (Exception,SystemExit) as e:

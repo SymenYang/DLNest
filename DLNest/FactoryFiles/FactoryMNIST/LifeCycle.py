@@ -32,6 +32,10 @@ class LifeCycle(LifeCycleBase):
             "max_acc" : self.maxAcc
         }
 
+    def AOneEpoch(self):
+        # step the optimizer after every epoch
+        self.runner.optimizer.step()
+
     def loadSaveDict(self,saveDict):
         self.maxAcc = saveDict["max_acc"]
 

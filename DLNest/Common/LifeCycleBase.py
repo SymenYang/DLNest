@@ -11,12 +11,20 @@ from functools import wraps
 import logging
 
 class LifeCycleBase:
-    def __init__(self,runner : RunnerBase = None,dataset : DatasetBase = None, taskProcess = None, rank : int = -1, plugins : list = []):
+    def __init__(self,runner : RunnerBase = None,dataset : DatasetBase = None, taskProcess = None, plugins : list = [], status = None):
         self.runner = runner
         self.dataset = dataset
         self.taskProcess = taskProcess
-        self.rank = rank
         self._plugins = plugins
+        self._status = status
+
+    # for backward compatibility
+    @property
+    def rank(self):
+        if not "_warned_rank" in dir(self):
+            self._warned_rank = True
+            print("LifeCycle.rank is deprecated, please use LifeCycle.status.rank")
+        return self._status.rank
 
     def getArgs(self):
         return self.taskProcess.task.args

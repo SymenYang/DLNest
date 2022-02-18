@@ -1,2 +1,2 @@
 def experience(self):
-    print(self.model.model)
+    print(self.runner.model)

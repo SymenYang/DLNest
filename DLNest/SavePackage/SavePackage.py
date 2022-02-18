@@ -42,7 +42,7 @@ class SavePackage:
         self.checkpointsDir = None
         self.prefix = "state_"
 
-    def giveArgs(self,args : dict):
+    def giveArgs(self,args : dict): # Not used
         self.args = args
         self.maxCkptSlow = self.args["checkpoint_args"]["max_ckpt_in_slow_track"]
         self.maxCkptFast = self.args["checkpoint_args"]["max_ckpt_in_fast_track"]
@@ -107,7 +107,7 @@ class SavePackage:
         '''
         if filePath.is_absolute():
             if filePath.is_dir():
-                shutil.copytree(filePath,saveDir / filePath.stem,)
+                shutil.copytree(filePath,saveDir / filePath.stem)
             else:
                 shutil.copy(filePath,saveDir / (filePath.stem + filePath.suffix))
         else:

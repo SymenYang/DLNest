@@ -21,13 +21,14 @@ try:
 except ImportError:
     USINGTORCH = False
 
+from DLNest.Common.RunningStatus import RunningStatus
+
 class TaskProcess(Process):
     def __init__(self,task : TaskInformation):
         super(TaskProcess,self).__init__()
         self.task = task
+        self.status = RunningStatus()
         self.finishedEpoch = -1
-        self.rank = -1
-        self.worldSize = -1
         self.plugins = []
     
     def __loadAModule(self,filePath : Path,name : str):
@@ -50,7 +51,11 @@ class TaskProcess(Process):
     def __initLifeCycle(self,rank : int = -1):
         lifeCycleName = self.task.args['life_cycle_name']
         if lifeCycleName in dir(self.lifeCycleModule):
-            self.lifeCycle = self.lifeCycleModule.__getattribute__(lifeCycleName)(taskProcess = self,rank = rank, plugins = self.plugins)
+            self.lifeCycle = self.lifeCycleModule.__getattribute__(lifeCycleName)(
+                taskProcess = self, 
+                plugins = self.plugins, 
+                status = self.status
+            )
             if self.task.loadCkpt:
                 self.lifeCycle._loadSaveDict(self.stateDict["life_cycle"])
         else:
@@ -64,6 +69,7 @@ class TaskProcess(Process):
             pluginName = tmpPath.name
         pluginModule = self.__loadAModule(filePath = pluginPath,name = pluginName)
         pluginClass = pluginModule.__getattribute__("DLNestPlugin")
+        pluginClass._status = self.status
         return pluginClass
 
     def __loadPlugins(self):
@@ -86,7 +92,11 @@ class TaskProcess(Process):
         datasetName = self.task.args['dataset_name']
         if datasetName in dir(self.datasetModule):
             datasetClass = self.datasetModule.__getattribute__(datasetName)
-            self.dataset = datasetClass(_envType = self.envType,args = self.task.args, plugins = self.plugins)
+            self.dataset = datasetClass(
+                args = self.task.args, 
+                plugins = self.plugins,
+                status = self.status
+            )
             self.datasetInfo,self.trainLoader,self.valLoader = self.dataset._datasetInit(self.task.args)
             # load from ckpt is needed.
             if self.task.loadCkpt:
@@ -98,15 +108,18 @@ class TaskProcess(Process):
         runnerName = self.task.args['runner_name'] if "runner_name" in self.task.args else self.task.args["model_name"] # need to be deprecated
         if runnerName in dir(self.runnerModule):
             runnerClass = self.runnerModule.__getattribute__(runnerName)
-            self.runner = runnerClass(_envType = self.envType,args = self.task.args, rank = self.rank,worldSize = self.worldSize, plugins = self.plugins)
+            self.runner = runnerClass(
+                args = self.task.args, 
+                plugins = self.plugins,
+                status = self.status
+            )
             self.runner._runnerInit(self.task.args,self.datasetInfo)
-            if self.envType != "DDP":
+            if self.status.env != "DDP":
                 self.runner._initOptimizer()
             else:
-                self.runner.DDPOperation(rank = self.rank)
+                self.runner.DDPOperation(rank = self.status.rank)
                 self.runner._initOptimizer()
-                self.runner.afterDDP(rank = self.rank)
-
+                self.runner.afterDDP(rank = self.status.rank)
             # load from ckpt is needed.
             if self.task.loadCkpt:
                 self.runner._loadSaveDict(self.stateDict["runner"] if "runner" in self.stateDict else self.stateDict["model"])
@@ -156,8 +169,8 @@ class TaskProcess(Process):
         os.environ["MASTER_PORT"] = self.task.port
         torch.cuda.set_device(rank)
         dist.init_process_group("nccl", rank = rank, world_size = worldSize)
-        self.rank = rank
-        self.worldSize = worldSize
+        self.status._RunningStatus__rank = rank
+        self.status._RunningStatus__worldSize = worldSize
         self.setupSeed()
     
     def runDDP(self,rank):
@@ -239,8 +252,8 @@ class TaskProcess(Process):
             return "Skip"
 
     def run(self):
-        self.envType = self.checkDeviceEnviroment()
-        if self.envType == "DDP":
+        self.status._RunningStatus__env = self.checkDeviceEnviroment()
+        if self.status.env == "DDP":
             # run DDP
             self.ppid = os.getpid()
             self.initBeforeDDP()

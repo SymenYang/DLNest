@@ -5,12 +5,13 @@ except ImportError:
 from functools import wraps
 import logging
 from DLNest.Plugins.Utils.CheckPlugins import checkPlugins,checkDictOutputPlugins
+from DLNest.Common.RunningStatus import RunningStatus
 
 class DatasetBase:
-    def __init__(self,_envType : str = "CPU", args : dict = {}, plugins : list = []):
-        self._envType = _envType
+    def __init__(self, args : dict = {}, plugins : list = [], status = RunningStatus()):
         self._args = args
         self._plugins = plugins
+        self._status = status
 
     def getArgs(self):
         return self._args
@@ -31,7 +32,7 @@ class DatasetBase:
         return {},None,None
 
     def getSampler(self, dataset):
-        if self._envType == "DDP":
+        if self._status.env == "DDP":
             return torch.utils.data.distributed.DistributedSampler(dataset)
         else:
             return None

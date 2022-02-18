@@ -7,12 +7,12 @@ class DLNestPlugin(DPB):
     _config = {}
     _defaultKeys = []
     def runnerInit(self,args : dict, datasetInfo : dict = None):
-        if self._rank == -1 or self._rank == 0:
+        if self._status.rank == -1 or self._status.rank == 0:
             self.writer = SummaryWriter(".")
         logging.debug("[AutoTensorboardScalar] Finish modelInit")
     
     def visualize(self, log : dict, epoch : int, iter : int):
-        if self._rank == -1 or self._rank == 0:
+        if self._status.rank == -1 or self._status.rank == 0:
             if not "_lastLen" in dir(self):
                 self._lastLen = {key : 0 for key in log}
 

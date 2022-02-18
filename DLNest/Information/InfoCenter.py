@@ -39,11 +39,16 @@ class InfoCenter(Singleton):
         if hasattr(self,'tasks'):
             return
         if HAVE_GPU:
-            # Init GPUs information
-            pynvml.nvmlInit()
-            self.totalGPUsInSystem = pynvml.nvmlDeviceGetCount()
-            self.devices = [GPUInformation(i) for i in range(self.totalGPUsInSystem)] + [CPUInformation()]
-            self.availableDevices = [i for i in range(self.totalGPUsInSystem)] + [-1]
+            try:
+                # Init GPUs information
+                pynvml.nvmlInit()
+                self.totalGPUsInSystem = pynvml.nvmlDeviceGetCount()
+                self.devices = [GPUInformation(i) for i in range(self.totalGPUsInSystem)] + [CPUInformation()]
+                self.availableDevices = [i for i in range(self.totalGPUsInSystem)] + [-1]
+            except Exception as e:
+                # using CPU only
+                self.devices = [CPUInformation()]
+                self.availableDevices = [0]
         else:
             # using CPU only
             self.devices = [CPUInformation()]
