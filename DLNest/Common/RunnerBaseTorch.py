@@ -65,7 +65,7 @@ class RunnerBaseTorch(RunnerBase):
         pass
 
     def __setattr__(self, name, value):
-        if isinstance(value, nn.Module):
+        if isinstance(value, nn.Module) and not isinstance(value, ModuleWrapper):
             super().__setattr__(name, self.register(value))
         elif isinstance(value, Optimizer):
             super().__setattr__(name, self.__registerOptimizer(value, name))
@@ -130,7 +130,10 @@ class RunnerBaseTorch(RunnerBase):
     
     def loadSaveDict(self,saveDict):
         for i in range(len(self.__modelList)):
-            self.__modelList[i].load_state_dict(saveDict[i])
+            try:
+                self.__modelList[i].load_state_dict(saveDict[i])
+            except Exception as e:
+                print("Save dict not find for {}".format(self.__modelList[i]))
         
         if "optimizer" in saveDict:
             for name in saveDict["optimizer"]:
